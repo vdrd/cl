@@ -47,6 +47,49 @@ const char *MatrixMul_kernel_basic =
 "    C[iRow*dim + iCol] = result;                                                           \n"
 "}                                                                                          \n";
 
+const char *MatrixMul_kernel_basic_vector4 =
+"#define VECTOR_SIZE 4                                                                          \n"
+"__kernel                                                                                       \n"
+"void MatrixMul_kernel_basic_vector4(int dim,                                                   \n"
+"                  __global float4 *A,                                                          \n"
+"                  __global float4 *B,                                                          \n"
+"                  __global float *C)                                                           \n"
+"{                                                                                              \n"
+"    //Get the index of the work-item                                                           \n"
+"    int localIdx = get_global_id(0);                                                           \n"
+"    int localIdy = get_global_id(1);                                                           \n"
+"    float result = 0.0;                                                                        \n"
+"    float4 Bvector[4];                                                                         \n"
+"    float4 Avector, temp;                                                                      \n"
+"    float4 resultVector[4] = {0,0,0,0};                                                        \n"
+"    int    rowElements = dim/VECTOR_SIZE;                                                                \n"
+"    for(int i=0; i<rowElements; ++i)                                                       \n"
+"    {                                                                                          \n"
+"	     Avector = A[localIdy*rowElements + i];                                                 \n"
+"        Bvector[0] = B[dim*i + localIdx];                                                      \n"
+"        Bvector[1] = B[dim*i + rowElements + localIdx];                                        \n"
+"        Bvector[2] = B[dim*i + 2*rowElements + localIdx];                                      \n"
+"        Bvector[3] = B[dim*i + 3*rowElements + localIdx];                                      \n"
+"        temp = (float4)(Bvector[0].x, Bvector[1].x, Bvector[2].x, Bvector[3].x);               \n"
+"	     resultVector[0] += Avector * temp;                                                     \n"
+"        temp = (float4)(Bvector[0].y, Bvector[1].y, Bvector[2].y, Bvector[3].y);               \n"
+"	     resultVector[1] += Avector * temp;                                                     \n"
+"        temp = (float4)(Bvector[0].z, Bvector[1].z, Bvector[2].z, Bvector[3].z);               \n"
+"	     resultVector[2] += Avector * temp;                                                     \n"
+"        temp = (float4)(Bvector[0].w, Bvector[1].w, Bvector[2].w, Bvector[3].w);               \n"
+"	     resultVector[3] += Avector * temp;                                                     \n"
+"    }                                                                                          \n"
+"    C[localIdy*dim + localIdx*VECTOR_SIZE] = resultVector[0].x + resultVector[0].y +           \n"
+"                                 resultVector[0].z + resultVector[0].w;                        \n"
+"    C[localIdy*dim + localIdx*VECTOR_SIZE + 1] = resultVector[1].x + resultVector[1].y +       \n"
+"                                 resultVector[1].z + resultVector[1].w;                        \n"
+"    C[localIdy*dim + localIdx*VECTOR_SIZE + 2] = resultVector[2].x + resultVector[2].y +       \n"
+"                                 resultVector[2].z + resultVector[2].w;                        \n"
+"    C[localIdy*dim + localIdx*VECTOR_SIZE + 3] = resultVector[3].x + resultVector[3].y +       \n"
+"                                 resultVector[3].z + resultVector[3].w;                        \n"
+"}                                                                                              \n";
+
+
 const char *MatrixMul_kernel_localA =
 "__kernel                                                                                           \n"
 "void MatrixMul_kernel_localA(int dim,                                                             \n"
@@ -249,12 +292,13 @@ const char *MatrixMul_kernel_RowPerWI_APriv_BLocal =
 
 
 //#define ENABLE_BASIC
+#define ENABLE_BASIC_VECTOR4
 //#define ENABLE_LOCAL_A
 //#define ENABLE_LOCAL_A_COALLESCED
 //#define ENABLE_LOCAL_A_COALLESCED_ROW
 //#define ENABLE_COALLESCED_ROW
 //#define ENABLE_ROW_PER_WI
-#define ENABLE_ROW_PER_WI_A_PRIVATE
+//#define ENABLE_ROW_PER_WI_A_PRIVATE
 //#define ENABLE_ROW_PER_WI_A_PRIVATE_B_LOCAL
 //"                                                                                  \n"
 //
@@ -554,6 +598,10 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
             (const char **)&MatrixMul_kernel_basic, NULL, &clStatus);
             printf("\n ENABLE_BASIC \n");
 #endif
+#ifdef ENABLE_BASIC_VECTOR4
+            (const char **)&MatrixMul_kernel_basic_vector4, NULL, &clStatus);
+            printf("\n ENABLE_BASIC_VECTOR4 \n");
+#endif
 #ifdef ENABLE_ROW_PER_WI
             (const char **)&MatrixMul_kernel_RowPerWI, NULL, &clStatus);
             printf("\n ENABLE_ROW_PER_WI \n");
@@ -596,6 +644,9 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 #ifdef ENABLE_BASIC
     cl_kernel kernel = clCreateKernel(program, "MatrixMul_kernel_basic", &clStatus);
 #endif
+#ifdef ENABLE_BASIC_VECTOR4
+    cl_kernel kernel = clCreateKernel(program, "MatrixMul_kernel_basic_vector4", &clStatus);
+#endif
 #ifdef ENABLE_ROW_PER_WI
     cl_kernel kernel = clCreateKernel(program, "MatrixMul_kernel_RowPerWI", &clStatus);
 #endif    // Set the arguments of the kernel
@@ -606,7 +657,10 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
     cl_kernel kernel = clCreateKernel(program, "MatrixMul_kernel_RowPerWI_APriv_BLocal", &clStatus);
 #endif
     clStatus = clSetKernelArg(kernel, 0, sizeof(float), (void *)&alpha);
+//#ifdef ENABLE_BASIC_VECTOR4
+//#else
     clStatus = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&A_clmem);
+//#endif
     clStatus = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&B_clmem);
     clStatus = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&C_clmem);
 #ifdef ENABLE_LOCAL_A
@@ -645,6 +699,13 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 #endif
 #ifdef ENABLE_BASIC 
     global_size[0] = MATRIX_WIDTH;   global_size[1] = MATRIX_HEIGHT;
+	local_size[0] =  BLOCK_SIZE;
+    local_size[0] =  BLOCK_SIZE*2;
+	local_size[1] =  BLOCK_SIZE;
+    local_size[1] =  BLOCK_SIZE*2;
+#endif
+#ifdef ENABLE_BASIC_VECTOR4
+    global_size[0] = MATRIX_WIDTH/4;   global_size[1] = MATRIX_HEIGHT;
 	local_size[0] =  BLOCK_SIZE;
     local_size[0] =  BLOCK_SIZE*2;
 	local_size[1] =  BLOCK_SIZE;
