@@ -30,7 +30,7 @@ void StartCounter();
 
 const char *MatrixMul_kernel_basic =
 "__kernel                                                                                   \n"
-"void MatrixMul_kernel_basic(int dim,                                                            \n"
+"void MatrixMul_kernel_basic(int dim,                                                       \n"
 "                  __global float *A,                                                       \n"
 "                  __global float *B,                                                       \n"
 "                  __global float *C)                                                       \n"
@@ -41,253 +41,253 @@ const char *MatrixMul_kernel_basic =
 "    float result = 0.0;                                                                    \n"
 "    for(int i=0;i< dim;++i)                                                                \n"
 "    {                                                                                      \n"
-"	     result +=                                                                          \n"
+"        result +=                                                                          \n"
 "        A[iRow*dim + i]*B[i*dim + iCol];                                                   \n"
 "    }                                                                                      \n"
 "    C[iRow*dim + iCol] = result;                                                           \n"
 "}                                                                                          \n";
 
 const char *MatrixMul_kernel_basic_vector4 =
-"#define VECTOR_SIZE 4                                                                          \n"
-"__kernel                                                                                       \n"
-"void MatrixMul_kernel_basic_vector4(int dim,                                                   \n"
-"                  __global float4 *A,                                                          \n"
-"                  __global float4 *B,                                                          \n"
-"                  __global float *C)                                                           \n"
-"{                                                                                              \n"
-"    //Get the index of the work-item                                                           \n"
-"    int localIdx = get_global_id(0);                                                           \n"
-"    int localIdy = get_global_id(1);                                                           \n"
-"    float result = 0.0;                                                                        \n"
-"    float4 Bvector[4];                                                                         \n"
-"    float4 Avector, temp;                                                                      \n"
-"    float4 resultVector[4] = {0,0,0,0};                                                        \n"
-"    int    rowElements = dim/VECTOR_SIZE;                                                                \n"
+"#define VECTOR_SIZE 4                                                                      \n"
+"__kernel                                                                                   \n"
+"void MatrixMul_kernel_basic_vector4(int dim,                                               \n"
+"                  __global float4 *A,                                                      \n"
+"                  __global float4 *B,                                                      \n"
+"                  __global float *C)                                                       \n"
+"{                                                                                          \n"
+"    //Get the index of the work-item                                                       \n"
+"    int localIdx = get_global_id(0);                                                       \n"
+"    int localIdy = get_global_id(1);                                                       \n"
+"    float result = 0.0;                                                                    \n"
+"    float4 Bvector[4];                                                                     \n"
+"    float4 Avector, temp;                                                                  \n"
+"    float4 resultVector[4] = {0,0,0,0};                                                    \n"
+"    int    rowElements = dim/VECTOR_SIZE;                                                  \n"
 "    for(int i=0; i<rowElements; ++i)                                                       \n"
-"    {                                                                                          \n"
-"	     Avector = A[localIdy*rowElements + i];                                                 \n"
-"        Bvector[0] = B[dim*i + localIdx];                                                      \n"
-"        Bvector[1] = B[dim*i + rowElements + localIdx];                                        \n"
-"        Bvector[2] = B[dim*i + 2*rowElements + localIdx];                                      \n"
-"        Bvector[3] = B[dim*i + 3*rowElements + localIdx];                                      \n"
-"        temp = (float4)(Bvector[0].x, Bvector[1].x, Bvector[2].x, Bvector[3].x);               \n"
-"	     resultVector[0] += Avector * temp;                                                     \n"
-"        temp = (float4)(Bvector[0].y, Bvector[1].y, Bvector[2].y, Bvector[3].y);               \n"
-"	     resultVector[1] += Avector * temp;                                                     \n"
-"        temp = (float4)(Bvector[0].z, Bvector[1].z, Bvector[2].z, Bvector[3].z);               \n"
-"	     resultVector[2] += Avector * temp;                                                     \n"
-"        temp = (float4)(Bvector[0].w, Bvector[1].w, Bvector[2].w, Bvector[3].w);               \n"
-"	     resultVector[3] += Avector * temp;                                                     \n"
-"    }                                                                                          \n"
-"    C[localIdy*dim + localIdx*VECTOR_SIZE] = resultVector[0].x + resultVector[0].y +           \n"
-"                                 resultVector[0].z + resultVector[0].w;                        \n"
-"    C[localIdy*dim + localIdx*VECTOR_SIZE + 1] = resultVector[1].x + resultVector[1].y +       \n"
-"                                 resultVector[1].z + resultVector[1].w;                        \n"
-"    C[localIdy*dim + localIdx*VECTOR_SIZE + 2] = resultVector[2].x + resultVector[2].y +       \n"
-"                                 resultVector[2].z + resultVector[2].w;                        \n"
-"    C[localIdy*dim + localIdx*VECTOR_SIZE + 3] = resultVector[3].x + resultVector[3].y +       \n"
-"                                 resultVector[3].z + resultVector[3].w;                        \n"
-"}                                                                                              \n";
+"    {                                                                                      \n"
+"        Avector = A[localIdy*rowElements + i];                                             \n"
+"        Bvector[0] = B[dim*i + localIdx];                                                  \n"
+"        Bvector[1] = B[dim*i + rowElements + localIdx];                                    \n"
+"        Bvector[2] = B[dim*i + 2*rowElements + localIdx];                                  \n"
+"        Bvector[3] = B[dim*i + 3*rowElements + localIdx];                                  \n"
+"        temp = (float4)(Bvector[0].x, Bvector[1].x, Bvector[2].x, Bvector[3].x);           \n"
+"        resultVector[0] += Avector * temp;                                                 \n"
+"        temp = (float4)(Bvector[0].y, Bvector[1].y, Bvector[2].y, Bvector[3].y);           \n"
+"        resultVector[1] += Avector * temp;                                                 \n"
+"        temp = (float4)(Bvector[0].z, Bvector[1].z, Bvector[2].z, Bvector[3].z);           \n"
+"        resultVector[2] += Avector * temp;                                                 \n"
+"        temp = (float4)(Bvector[0].w, Bvector[1].w, Bvector[2].w, Bvector[3].w);           \n"
+"        resultVector[3] += Avector * temp;                                                 \n"
+"    }                                                                                      \n"
+"    C[localIdy*dim + localIdx*VECTOR_SIZE] = resultVector[0].x + resultVector[0].y +       \n"
+"                                 resultVector[0].z + resultVector[0].w;                    \n"
+"    C[localIdy*dim + localIdx*VECTOR_SIZE + 1] = resultVector[1].x + resultVector[1].y +   \n"
+"                                 resultVector[1].z + resultVector[1].w;                    \n"
+"    C[localIdy*dim + localIdx*VECTOR_SIZE + 2] = resultVector[2].x + resultVector[2].y +   \n"
+"                                 resultVector[2].z + resultVector[2].w;                    \n"
+"    C[localIdy*dim + localIdx*VECTOR_SIZE + 3] = resultVector[3].x + resultVector[3].y +   \n"
+"                                 resultVector[3].z + resultVector[3].w;                    \n"
+"}                                                                                          \n";
 
 
 const char *MatrixMul_kernel_localA =
-"__kernel                                                                                           \n"
-"void MatrixMul_kernel_localA(int dim,                                                             \n"
-"                  __global float *A,                                                               \n"
-"                  __global float *B,                                                               \n"
-"                  __global float *C,                                                               \n"
-"                  __local  float *lA)                                                              \n"
-"{                                                                                                  \n"
-"    //Get the index of the work-item                                                               \n"
-"    int iCol = get_global_id(0);                                                                   \n"
-"    int iRow = get_global_id(1);                                                                   \n"
-"    int localIdx = get_local_id(0);                                                                \n"
-"    int localSizex = get_local_size(0);                                                            \n"
-"    float result = 0.0f;                                                                           \n"
-"    int numElements = dim/localSizex;                                                          \n"
-"    for(int i=0; i<numElements ; i++)                                                          \n"
-"    {                                                                                              \n"
+"__kernel                                                                                   \n"
+"void MatrixMul_kernel_localA(int dim,                                                      \n"
+"                  __global float *A,                                                       \n"
+"                  __global float *B,                                                       \n"
+"                  __global float *C,                                                       \n"
+"                  __local  float *lA)                                                      \n"
+"{                                                                                          \n"
+"    //Get the index of the work-item                                                       \n"
+"    int iCol = get_global_id(0);                                                           \n"
+"    int iRow = get_global_id(1);                                                           \n"
+"    int localIdx = get_local_id(0);                                                        \n"
+"    int localSizex = get_local_size(0);                                                    \n"
+"    float result = 0.0f;                                                                   \n"
+"    int numElements = dim/localSizex;                                                      \n"
+"    for(int i=0; i<numElements ; i++)                                                      \n"
+"    {                                                                                      \n"
 "        lA[localIdx*numElements + i] = A[iRow*dim + localIdx*numElements + i];             \n"
-"    }                                                                                              \n"
-"    barrier(CLK_LOCAL_MEM_FENCE);                                                                  \n"
-"    for(int i=0;i< dim;++i)                                                                        \n"
-"    {                                                                                              \n"
-"	     result +=                                                                                  \n"
-"        lA[i]*B[i*dim + iCol];                                                                     \n"
-"        //printf(\"%d, %d = %f - %f\\n\",iCol, iRow, lA[i],B[i*dim + iCol]);                       \n"
-"    }                                                                                              \n"
-"    C[iRow*dim + iCol] = result;                                                                   \n"
-"}										                                                            \n";
+"    }                                                                                      \n"
+"    barrier(CLK_LOCAL_MEM_FENCE);                                                          \n"
+"    for(int i=0;i< dim;++i)                                                                \n"
+"    {                                                                                      \n"
+"        result +=                                                                          \n"
+"        lA[i]*B[i*dim + iCol];                                                             \n"
+"        //printf(\"%d, %d = %f - %f\\n\",iCol, iRow, lA[i],B[i*dim + iCol]);               \n"
+"    }                                                                                      \n"
+"    C[iRow*dim + iCol] = result;                                                           \n"
+"}                                                                                          \n";
 
 
 const char *MatrixMul_kernel_localA_coallesced =
-"__kernel                                                                                           \n"
-"void MatrixMul_kernel_localA_coallesced(int dim,                                                             \n"
-"                  __global float *A,                                                               \n"
-"                  __global float *B,                                                               \n"
-"                  __global float *C,                                                               \n"
-"                  __local  float *lA)                                                              \n"
-"{                                                                                                  \n"
-"    //Get the index of the work-item                                                               \n"
-"    int iCol = get_global_id(0);                                                                   \n"
-"    int iRow = get_global_id(1);                                                                   \n"
-"    int localIdx = get_local_id(0);                                                                \n"
-"    int localSizex = get_local_size(0);                                                            \n"
-"    float result = 0.0f;                                                                           \n"
-"    int numElements = dim/localSizex;                                                          \n"
-"    for(int i=0; i<numElements ; i++)                                                          \n"
-"    {                                                                                              \n"
-"        lA[i*localSizex + localIdx] = A[iRow*dim + i*localSizex + localIdx];                       \n"
-"    }                                                                                              \n"
-"    barrier(CLK_LOCAL_MEM_FENCE);                                                                  \n"
-"    for(int i=0;i< dim;++i)                                                                        \n"
-"    {                                                                                              \n"
-"	     result +=                                                                                  \n"
-"        lA[i]*B[i*dim + iCol];                                                                     \n"
-"        //printf(\"%d, %d = %f - %f\\n\",iCol, iRow, lA[i],B[i*dim + iCol]);                       \n"
-"    }                                                                                              \n"
-"    C[iRow*dim + iCol] = result;                                                                   \n"
-"}										                                                            \n";
+"__kernel                                                                                   \n"
+"void MatrixMul_kernel_localA_coallesced(int dim,                                           \n"
+"                  __global float *A,                                                       \n"
+"                  __global float *B,                                                       \n"
+"                  __global float *C,                                                       \n"
+"                  __local  float *lA)                                                      \n"
+"{                                                                                          \n"
+"    //Get the index of the work-item                                                       \n"
+"    int iCol = get_global_id(0);                                                           \n"
+"    int iRow = get_global_id(1);                                                           \n"
+"    int localIdx = get_local_id(0);                                                        \n"
+"    int localSizex = get_local_size(0);                                                    \n"
+"    float result = 0.0f;                                                                   \n"
+"    int numElements = dim/localSizex;                                                      \n"
+"    for(int i=0; i<numElements ; i++)                                                      \n"
+"    {                                                                                      \n"
+"        lA[i*localSizex + localIdx] = A[iRow*dim + i*localSizex + localIdx];               \n"
+"    }                                                                                      \n"
+"    barrier(CLK_LOCAL_MEM_FENCE);                                                          \n"
+"    for(int i=0;i< dim;++i)                                                                \n"
+"    {                                                                                      \n"
+"        result +=                                                                          \n"
+"        lA[i]*B[i*dim + iCol];                                                             \n"
+"        //printf(\"%d, %d = %f - %f\\n\",iCol, iRow, lA[i],B[i*dim + iCol]);               \n"
+"    }                                                                                      \n"
+"    C[iRow*dim + iCol] = result;                                                           \n"
+"}                                                                                          \n";
 
 //4 eleemnts per work Item
 const char *MatrixMul_kernel_coallesced_row =
-"__kernel                                                                                           \n"
-"void MatrixMul_kernel_coallesced_row(int dim,                                                      \n"
-"                  __global float *A,                                                               \n"
-"                  __global float *B,                                                               \n"
-"                  __global float *C)                                                               \n"
-"{                                                                                                  \n"
-"    //Get the index of the work-item                                                               \n"
-"    int iCol = get_global_id(0);                                                                   \n"
-"    int iRow = get_global_id(1);                                                                   \n"
-"    int localIdx = get_local_id(0);                                                                \n"
-"    int localSizex = get_local_size(0);                                                            \n"
-"    float result = 0.0f;                                                                           \n"
-"    int numElements = dim/localSizex;                                                              \n"
-"    for(int j=0; j<numElements; j++)                                                               \n"
-"    {                                                                                              \n"
-"       result = 0.0f;                                                                               \n"
-"       for(int i=0;i< dim;++i)                                                                     \n"
-"       {                                                                                           \n"
-"	        result += A[iRow*dim + i]*B[i*dim + j*localSizex + localIdx];                                     \n"
-"       }                                                                                           \n"
-"       C[iRow*dim + j*localSizex + iCol] = result;                                                 \n"
-"    }                                                                                              \n"
-"}										                                                            \n";
+"__kernel                                                                                   \n"
+"void MatrixMul_kernel_coallesced_row(int dim,                                              \n"
+"                  __global float *A,                                                       \n"
+"                  __global float *B,                                                       \n"
+"                  __global float *C)                                                       \n"
+"{                                                                                          \n"
+"    //Get the index of the work-item                                                       \n"
+"    int iCol = get_global_id(0);                                                           \n"
+"    int iRow = get_global_id(1);                                                           \n"
+"    int localIdx = get_local_id(0);                                                        \n"
+"    int localSizex = get_local_size(0);                                                    \n"
+"    float result = 0.0f;                                                                   \n"
+"    int numElements = dim/localSizex;                                                      \n"
+"    for(int j=0; j<numElements; j++)                                                       \n"
+"    {                                                                                      \n"
+"       result = 0.0f;                                                                      \n"
+"       for(int i=0;i< dim;++i)                                                             \n"
+"       {                                                                                   \n"
+"           result += A[iRow*dim + i]*B[i*dim + j*localSizex + localIdx];                   \n"
+"       }                                                                                   \n"
+"       C[iRow*dim + j*localSizex + iCol] = result;                                         \n"
+"    }                                                                                      \n"
+"}                                                                                          \n";
 
 const char *MatrixMul_kernel_localA_coallesced_row =
-"__kernel                                                                                           \n"
-"void MatrixMul_kernel_localA_coallesced_row(int dim,                                               \n"
-"                  __global float *A,                                                               \n"
-"                  __global float *B,                                                               \n"
-"                  __global float *C,                                                               \n"
-"                  __local  float *lA)                                                              \n"
-"{                                                                                                  \n"
-"    //Get the index of the work-item                                                               \n"
-"    int iCol = get_global_id(0);                                                                   \n"
-"    int iRow = get_global_id(1);                                                                   \n"
-"    int localIdx = get_local_id(0);                                                                \n"
-"    int localSizex = get_local_size(0);                                                            \n"
-"    float result = 0.0f;                                                                           \n"
-"    int numElements = dim/localSizex;                                                              \n"
-"    for(int i=0; i<numElements ; i++)                                                              \n"
-"    {                                                                                              \n"
-"        lA[i*localSizex + localIdx] = A[iRow*dim + i*localSizex + localIdx];                       \n"
-"    }                                                                                              \n"
-"    barrier(CLK_LOCAL_MEM_FENCE);                                                                  \n"
-"    for(int j=0; j<numElements; j++)                                                               \n"
-"    {                                                                                              \n"
-"       result = 0.0;                                                                               \n"
-"       for(int i=0;i< dim;++i)                                                                     \n"
-"       {                                                                                           \n"
-"	        result += lA[i]*B[i*dim + j*localSizex + localIdx];                                     \n"
-"       }                                                                                           \n"
-"       C[iRow*dim + j*localSizex + iCol] = result;                                                 \n"
-"    }                                                                                              \n"
-"}										                                                            \n";
+"__kernel                                                                                   \n"
+"void MatrixMul_kernel_localA_coallesced_row(int dim,                                       \n"
+"                  __global float *A,                                                       \n"
+"                  __global float *B,                                                       \n"
+"                  __global float *C,                                                       \n"
+"                  __local  float *lA)                                                      \n"
+"{                                                                                          \n"
+"    //Get the index of the work-item                                                       \n"
+"    int iCol = get_global_id(0);                                                           \n"
+"    int iRow = get_global_id(1);                                                           \n"
+"    int localIdx = get_local_id(0);                                                        \n"
+"    int localSizex = get_local_size(0);                                                    \n"
+"    float result = 0.0f;                                                                   \n"
+"    int numElements = dim/localSizex;                                                      \n"
+"    for(int i=0; i<numElements ; i++)                                                      \n"
+"    {                                                                                      \n"
+"        lA[i*localSizex + localIdx] = A[iRow*dim + i*localSizex + localIdx];               \n"
+"    }                                                                                      \n"
+"    barrier(CLK_LOCAL_MEM_FENCE);                                                          \n"
+"    for(int j=0; j<numElements; j++)                                                       \n"
+"    {                                                                                      \n"
+"       result = 0.0;                                                                       \n"
+"       for(int i=0;i< dim;++i)                                                             \n"
+"       {                                                                                   \n"
+"           result += lA[i]*B[i*dim + j*localSizex + localIdx];                             \n"
+"       }                                                                                   \n"
+"       C[iRow*dim + j*localSizex + iCol] = result;                                         \n"
+"    }                                                                                      \n"
+"}                                                                                          \n";
 
 const char *MatrixMul_kernel_RowPerWI =
-"__kernel                                                                                           \n"
-"void MatrixMul_kernel_RowPerWI(int dim,                                                            \n"
-"                  __global float *A,                                                               \n"
-"                  __global float *B,                                                               \n"
-"                  __global float *C)                                                              \n"
-"{                                                                                                  \n"
-"    //Get the index of the work-item                                                               \n"
-"    int iRow = get_global_id(0);                                                                   \n"
-"    float result = 0.0;                                                                            \n"
-"    for(int j=0;j< dim;++j)                                                                        \n"
-"    {                                                                                              \n"
-"       result = 0.0f;                                                                              \n"
-"       for(int i=0;i< dim;++i)                                                                     \n"
-"       {                                                                                           \n"
-"	        result +=                                                                               \n"
-"               A[iRow*dim + i]*B[i*dim + j];                                                         \n"
-"       }                                                                                           \n"
-"       C[iRow*dim + j] = result;                                                                \n"
-"    }                                                                                              \n"
-"}                                                                                                  \n";
+"__kernel                                                                                   \n"
+"void MatrixMul_kernel_RowPerWI(int dim,                                                    \n"
+"                  __global float *A,                                                       \n"
+"                  __global float *B,                                                       \n"
+"                  __global float *C)                                                       \n"
+"{                                                                                          \n"
+"    //Get the index of the work-item                                                       \n"
+"    int iRow = get_global_id(0);                                                           \n"
+"    float result = 0.0;                                                                    \n"
+"    for(int j=0;j< dim;++j)                                                                \n"
+"    {                                                                                      \n"
+"       result = 0.0f;                                                                      \n"
+"       for(int i=0;i< dim;++i)                                                             \n"
+"       {                                                                                   \n"
+"           result +=                                                                       \n"
+"               A[iRow*dim + i]*B[i*dim + j];                                               \n"
+"       }                                                                                   \n"
+"       C[iRow*dim + j] = result;                                                           \n"
+"    }                                                                                      \n"
+"}                                                                                          \n";
 
 const char *MatrixMul_kernel_RowPerWI_APriv =
-"__kernel                                                                                           \n"
-"void MatrixMul_kernel_RowPerWI_APriv(int dim,                                                            \n"
-"                  __global float *A,                                                               \n"
-"                  __global float *B,                                                               \n"
-"                  __global float *C)                                                              \n"
-"{                                                                                                  \n"
-"    //Get the index of the work-item                                                               \n"
-"    int iRow = get_global_id(0);                                                                   \n"
-"    float result = 0.0;                                                                            \n"
+"__kernel                                                                                   \n"
+"void MatrixMul_kernel_RowPerWI_APriv(int dim,                                              \n"
+"                  __global float *A,                                                       \n"
+"                  __global float *B,                                                       \n"
+"                  __global float *C)                                                       \n"
+"{                                                                                          \n"
+"    //Get the index of the work-item                                                       \n"
+"    int iRow = get_global_id(0);                                                           \n"
+"    float result = 0.0;                                                                    \n"
 "    float lA[1024];                         \n"
 "    for(int i=0; i<dim ; i++)                                                              \n"
-"    {                                                                                              \n"
+"    {                                                                                      \n"
 "        lA[i] = A[iRow*dim + i];                                                           \n"
-"    }                                                                                              \n"
-"    for(int j=0;j< dim;++j)                                                                        \n"
-"    {                                                                                              \n"
-"       result = 0.0f;                                                                              \n"
-"       for(int i=0;i< dim;++i)                                                                     \n"
-"       {                                                                                           \n"
-"	        result +=                                                                               \n"
+"    }                                                                                      \n"
+"    for(int j=0;j< dim;++j)                                                                \n"
+"    {                                                                                      \n"
+"       result = 0.0f;                                                                      \n"
+"       for(int i=0;i< dim;++i)                                                             \n"
+"       {                                                                                   \n"
+"           result +=                                                                       \n"
 "               lA[i]*B[i*dim + j];                                                         \n"
-"       }                                                                                           \n"
-"       C[iRow*dim + j] = result;                                                                \n"
-"    }                                                                                              \n"
-"}                                                                                                  \n";
+"       }                                                                                   \n"
+"       C[iRow*dim + j] = result;                                                           \n"
+"    }                                                                                      \n"
+"}                                                                                          \n";                
 
 const char *MatrixMul_kernel_RowPerWI_APriv_BLocal =
-"__kernel                                                                                           \n"
-"void MatrixMul_kernel_RowPerWI_APriv_BLocal(int dim,                                               \n"
-"                  __global float *A,                                                               \n"
-"                  __global float *B,                                                               \n"
-"                  __global float *C,                                                               \n"
-"                  __local  float *lB)                                                              \n"
-"{                                                                                                  \n"
-"    //Get the index of the work-item                                                               \n"
-"    int iRow = get_global_id(0);                                                                   \n"
-"    int localIDx = get_local_id(0);                                                                   \n"
-"    float result = 0.0;                                                                            \n"
+"__kernel                                                                                   \n"
+"void MatrixMul_kernel_RowPerWI_APriv_BLocal(int dim,                                       \n"
+"                  __global float *A,                                                       \n"
+"                  __global float *B,                                                       \n"
+"                  __global float *C,                                                       \n"
+"                  __local  float *lB)                                                      \n"
+"{                                                                                          \n"
+"    //Get the index of the work-item                                                       \n"
+"    int iRow = get_global_id(0);                                                           \n"
+"    int localIDx = get_local_id(0);                                                        \n"
+"    float result = 0.0;                                                                    \n"
 "    float lA[1024];                                                                        \n"
-"    for(int i=0; i<dim ; i++)                                                                      \n"
-"    {                                                                                              \n"
-"        lA[i] = A[iRow*dim + i];                                                                   \n"
-"    }                                                                                              \n"
-"    for(int j=0;j< dim;++j)                                                                        \n"
-"    {                                                                                              \n"
-"       result = 0.0f;                                                                              \n"
-"       int numElements = dim/get_local_size(0);                                                    \n"
+"    for(int i=0; i<dim ; i++)                                                              \n"
+"    {                                                                                      \n"
+"        lA[i] = A[iRow*dim + i];                                                           \n"
+"    }                                                                                      \n"
+"    for(int j=0;j< dim;++j)                                                                \n"
+"    {                                                                                      \n"
+"       result = 0.0f;                                                                      \n"
+"       int numElements = dim/get_local_size(0);                                            \n"
 "                                                                                           \n"
-"       for (int k=0; k<numElements; k++)                                                          \n"
+"       for (int k=0; k<numElements; k++)                                                   \n"
 "            lB[localIDx*numElements + k] = B[(localIDx*numElements)*dim+ k*dim + j];       \n"
-"       barrier(CLK_LOCAL_MEM_FENCE);                                                              \n"
-"       for(int i=0;i< dim;++i)                                                                     \n"
-"       {                                                                                           \n"
-"	        result +=                                                                               \n"
+"       barrier(CLK_LOCAL_MEM_FENCE);                                                       \n"
+"       for(int i=0;i< dim;++i)                                                             \n"
+"       {                                                                                   \n"
+"           result +=                                                                       \n"
 "               lA[i]*lB[i];                                                                \n"
-"       }                                                                                           \n"
-"       C[iRow*dim + j] = result;                                                                \n"
-"    }                                                                                              \n"
-"}                                                                                                  \n";
+"       }                                                                                   \n"
+"       C[iRow*dim + j] = result;                                                           \n"
+"    }                                                                                      \n"
+"}                                                                                          \n";
 
 
 
@@ -336,7 +336,7 @@ const char *MatrixMul_kernel200 =
 "            float privateSum = 0.0;                       \n"
 "            for(iLoop=0;iLoop< dim;++iLoop)           \n"
 "            {                                             \n"
-"	            privateSum +=            \n"
+"                privateSum +=            \n"
 "                privateAOneRow[iLoop]*B[iCol + iLoop*dim];           \n"
 "            }           \n"
 "            C[iCol + dim*iRowComputed] = privateSum;           \n"
@@ -374,7 +374,7 @@ const char *MatrixMul_kernel300 =
 "            float privateSum = 0.0;                       \n"
 "            for(int iLoop=0;iLoop< dim;++iLoop)           \n"
 "            {                                             \n"
-"	            privateSum +=            \n"
+"                privateSum +=            \n"
 "                privateAOneRow[iLoop]*B[iLoop + iCol*dim];           \n"
 "            }           \n"
 "            C[iCol + dim*iRowComputed] = privateSum;           \n"
@@ -431,7 +431,7 @@ const char *MatrixMul_kernel400 =
 "            float4 sum = (float4)(0);                         \n"
 "            for(iLoop=0;iLoop< dim/4;++iLoop)                                            \n"
 "            {                                                                                               \n"
-"	            privateSum +=                                                                   \n"
+"                privateSum +=                                                                   \n"
 "                privateAOneRow[iLoop]*localBFull[iLoop];                                 \n"
 "            }                                                                                                   \n"
 "            C[iCol + dim*iRowComputed] = privateSum.x +privateSum.y +privateSum.z +privateSum.w;                                 \n"
@@ -489,7 +489,7 @@ const char *MatrixMul_kernel2 =
 "    __local float SubB[BLOCK_SIZE][BLOCK_SIZE];                                                       \n"
 "    for (int k = 0; k < numTiles; k++)                                                                \n"
 "    {                                                                                                 \n"
-"	//koushik done upto                                                                                \n"
+"    //koushik done upto                                                                                \n"
 "        SubA[iLocRow][iLocCol] = A[BLOCK_SIZE*iGroup + iLocRow + dim*(BLOCK_SIZE*k+iLocCol)];         \n"     
 "        SubB[iLocRow][iLocCol] = A[BLOCK_SIZE*iGroup + iLocRow + dim*(BLOCK_SIZE*k+iLocCol)];         \n"  
 "        barrier(CLK_LOCAL_MEM_FENCE);                                                                 \n"
@@ -511,7 +511,7 @@ void matrixMultWithLocal2();
 
 int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 {
-	cl_event events;
+    cl_event events;
     int i;
     // Allocate space for vectors A, B and C
     int alpha = MATRIX_WIDTH;
@@ -557,11 +557,11 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
     cl_command_queue_properties prop = 0;
     prop |= CL_QUEUE_PROFILING_ENABLE;
     cl_command_queue command_queue = clCreateCommandQueue(context, device_list[0], prop, &clStatus);
-	//cl_uint buf_uint;
-	//clGetDeviceInfo(device_list[0], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(buf_uint), &buf_uint, NULL);
-	//clGetDeviceInfo(device_list[0], CL_DEVICE_MAX_COMPUTE_UNITS, 4, &buf_uint, &koushik);
-	//printf("KOUSHIK FUN:  DEVICE_MAX_COMPUTE_UNITS = %u\n", (unsigned int)buf_uint);
-	
+    //cl_uint buf_uint;
+    //clGetDeviceInfo(device_list[0], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(buf_uint), &buf_uint, NULL);
+    //clGetDeviceInfo(device_list[0], CL_DEVICE_MAX_COMPUTE_UNITS, 4, &buf_uint, &koushik);
+    //printf("KOUSHIK FUN:  DEVICE_MAX_COMPUTE_UNITS = %u\n", (unsigned int)buf_uint);
+    
     // Create memory buffers on the device for each vector
     cl_mem A_clmem = clCreateBuffer(context, CL_MEM_READ_ONLY,
             MATRIX_WIDTH*MATRIX_HEIGHT * sizeof(float), NULL, &clStatus);
@@ -677,17 +677,17 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 #endif
 
     LOG_OCL_ERROR(clStatus, "clSetKernelArg Failed" );
-	
+    
     // Execute the OpenCL kernel on the list
     size_t global_size[2];    size_t local_size[2];
 
 #ifdef ENABLE_LOCAL_A 
     global_size[0] = MATRIX_WIDTH;   global_size[1] = MATRIX_HEIGHT;
-    local_size[0] =  256;	local_size[1] =  1;
+    local_size[0] =  256;    local_size[1] =  1;
 #endif
 #ifdef ENABLE_LOCAL_A_COALLESCED
     global_size[0] = MATRIX_WIDTH;   global_size[1] = MATRIX_HEIGHT;
-	local_size[0] =  128;   local_size[0] =  256; local_size[1] =  1;
+    local_size[0] =  128;   local_size[0] =  256; local_size[1] =  1;
 #endif
 #ifdef ENABLE_LOCAL_A_COALLESCED_ROW
     global_size[0] = 128; global_size[1] = MATRIX_HEIGHT;
@@ -699,16 +699,16 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 #endif
 #ifdef ENABLE_BASIC 
     global_size[0] = MATRIX_WIDTH;   global_size[1] = MATRIX_HEIGHT;
-	local_size[0] =  BLOCK_SIZE;
+    local_size[0] =  BLOCK_SIZE;
     local_size[0] =  BLOCK_SIZE*2;
-	local_size[1] =  BLOCK_SIZE;
+    local_size[1] =  BLOCK_SIZE;
     local_size[1] =  BLOCK_SIZE*2;
 #endif
 #ifdef ENABLE_BASIC_VECTOR4
     global_size[0] = MATRIX_WIDTH/4;   global_size[1] = MATRIX_HEIGHT;
-	local_size[0] =  BLOCK_SIZE;
+    local_size[0] =  BLOCK_SIZE;
     local_size[0] =  BLOCK_SIZE*2;
-	local_size[1] =  BLOCK_SIZE;
+    local_size[1] =  BLOCK_SIZE;
     local_size[1] =  BLOCK_SIZE*2;
 #endif
 #ifdef ENABLE_ROW_PER_WI
@@ -732,8 +732,8 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
             global_size, local_size, 0, NULL, &events);
 #endif
     LOG_OCL_ERROR(clStatus, "clEnqueueNDRangeKernel Failed" );
-	//if(CL_SUCCESS != clStatus) printf("\n clEnqueueNDRangeKernel Failed -- %d", clStatus);
-	clWaitForEvents(1, &events);
+    //if(CL_SUCCESS != clStatus) printf("\n clEnqueueNDRangeKernel Failed -- %d", clStatus);
+    clWaitForEvents(1, &events);
 
     cl_ulong startTime;
     cl_ulong endTime;
@@ -744,39 +744,39 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
                                      sizeof(cl_ulong),
                                      &startTime,
                                      0);
-	if(CL_SUCCESS != clStatus) printf("\nclGetEventProfilingInfo Failed -- %d", clStatus);
+    if(CL_SUCCESS != clStatus) printf("\nclGetEventProfilingInfo Failed -- %d", clStatus);
 
     clStatus = clGetEventProfilingInfo(events,
                                      CL_PROFILING_COMMAND_END,
                                      sizeof(cl_ulong),
                                      &endTime,
                                      0);
-	if(CL_SUCCESS != clStatus) printf("\nclGetEventProfilingInfo Failed -- %d", clStatus);
+    if(CL_SUCCESS != clStatus) printf("\nclGetEventProfilingInfo Failed -- %d", clStatus);
     double sec = 1e-9 * (endTime - startTime);
 
     // Read the memory buffer C_clmem on the device to the local variable C
     clStatus = clEnqueueReadBuffer(command_queue, C_clmem, CL_TRUE, 0,
             MATRIX_WIDTH*MATRIX_HEIGHT * sizeof(float), C, 0, NULL, NULL);
-	LOG_OCL_ERROR(clStatus, "clEnqueueReadBuffer Failed" );
+    LOG_OCL_ERROR(clStatus, "clEnqueueReadBuffer Failed" );
     // Clean up and wait for all the comands to complete.
     //clStatus = clFlush(command_queue);
     clStatus = clFinish(command_queue);
 
-	printf("\n Kernel1................................................\n");
-	printf("\n Time to execute Kernel=%f ms", sec * 1000);
+    printf("\n Kernel1................................................\n");
+    printf("\n Time to execute Kernel=%f ms", sec * 1000);
     // Display the result to the screen
     /*for(i = 0; i < VECTOR_SIZE; i++)
         printf("\n%d-th Elements  A=%f B=%f C=%f", i, A[i], B[i], C[i]);*/
-	if(verify)
+    if(verify)
     {
-	    if(resultIsCorrect(A,B,C,MATRIX_WIDTH))
-	    {
-		    printf("\nKernel 1 - PASSED");
-	    }
-	    else
-	    {
-		    printf("\nKernel 1 - FAILED");
-	    }
+        if(resultIsCorrect(A,B,C,MATRIX_WIDTH))
+        {
+            printf("\nKernel 1 - PASSED");
+        }
+        else
+        {
+            printf("\nKernel 1 - FAILED");
+        }
     }
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(kernel);
@@ -797,7 +797,7 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 #if 0
 void callMatrixMult2()
 {
-	cl_event events;
+    cl_event events;
     int i;
     // Allocate space for vectors A, B and C
     int alpha = 32;
@@ -864,16 +864,16 @@ void callMatrixMult2()
 
     // Build the program
     clStatus = clBuildProgram(program, 1, device_list, NULL, NULL, NULL); 
-	if(CL_SUCCESS != clStatus)
-	{
-		printf("KOUSHIK Kerne200 failed1 %d",clStatus);
-	}
+    if(CL_SUCCESS != clStatus)
+    {
+        printf("KOUSHIK Kerne200 failed1 %d",clStatus);
+    }
     // Create the OpenCL kernel
     cl_kernel kernel = clCreateKernel(program, "MatrixMul_kernel400", &clStatus);
-	if(CL_SUCCESS != clStatus)
-	{
-		printf("KOUSHIK Kerne200 failed2 %d", clStatus);
-	}
+    if(CL_SUCCESS != clStatus)
+    {
+        printf("KOUSHIK Kerne200 failed2 %d", clStatus);
+    }
     // Set the arguments of the kernel
     clStatus = clSetKernelArg(kernel, 0, sizeof(float), (void *)&alpha);
     clStatus = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&A_clmem);
@@ -884,13 +884,13 @@ void callMatrixMult2()
     // Execute the OpenCL kernel on the list
     size_t global_size;
     size_t local_size;
-	global_size = MATRIX_DIM;
-	local_size =  BLOCK_SIZE;//BHATTACHARYYA
+    global_size = MATRIX_DIM;
+    local_size =  BLOCK_SIZE;//BHATTACHARYYA
 
     clStatus = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
             &global_size, &local_size, 0, NULL, &events);
-	
-	clWaitForEvents(1, &events);
+    
+    clWaitForEvents(1, &events);
 
     cl_ulong startTime;
     cl_ulong endTime;
@@ -902,33 +902,33 @@ void callMatrixMult2()
                                      &startTime,
                                      0);
 
-	if(CL_SUCCESS != clStatus) printf("\nKoushik11 %d", clStatus); 
+    if(CL_SUCCESS != clStatus) printf("\nKoushik11 %d", clStatus); 
     clStatus = clGetEventProfilingInfo(events,
                                      CL_PROFILING_COMMAND_END,
                                      sizeof(cl_ulong),
                                      &endTime,
                                      0);
-	if(CL_SUCCESS != clStatus) printf("\nKoushik22 %d", clStatus); 
+    if(CL_SUCCESS != clStatus) printf("\nKoushik22 %d", clStatus); 
     double sec = 1e-9 * (endTime - startTime);
 
     // Read the memory buffer C_clmem on the device to the local variable C
     clStatus = clEnqueueReadBuffer(command_queue, C_clmem, CL_TRUE, 0,
             VECTOR_SIZE * sizeof(float), C, 0, NULL, NULL);
-	if(CL_SUCCESS != clStatus) printf("Koushik33"); 
+    if(CL_SUCCESS != clStatus) printf("Koushik33"); 
     // Clean up and wait for all the comands to complete.
     clStatus = clFlush(command_queue);
     clStatus = clFinish(command_queue);
 
-	printf("\n Kernel1................................................\n");
-	printf("\n Time to execute Kernel=%f ms", sec * 1000);
+    printf("\n Kernel1................................................\n");
+    printf("\n Time to execute Kernel=%f ms", sec * 1000);
     // Display the result to the screen
     for(i = 0; i < VECTOR_SIZE; i++)
         printf("\n%d-th Elements  A=%f B=%f C=%f", i, A[i], B[i], C[i]);
-	
-	if(resultIsCorrect(A,B,C,MATRIX_DIM))
-	{
-		printf("\nKernel 200 is OK");
-	}
+    
+    if(resultIsCorrect(A,B,C,MATRIX_DIM))
+    {
+        printf("\nKernel 200 is OK");
+    }
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(kernel);
     clStatus = clReleaseProgram(program);
@@ -947,11 +947,11 @@ void callMatrixMult2()
 void matrixMultSimpleKernel()
 {
     int i;
-	//timeStamps[0] = getTime();
+    //timeStamps[0] = getTime();
 
     // Allocate space for vectors A, B and C
     //int dimOfSq = 32;
-	int dimOfSq = 32;
+    int dimOfSq = 32;
     float *A = (float*)malloc(sizeof(float)*VECTOR_SIZE);
     float *B = (float*)malloc(sizeof(float)*VECTOR_SIZE);
     float *C = (float*)malloc(sizeof(float)*VECTOR_SIZE);
@@ -1032,7 +1032,7 @@ void matrixMultSimpleKernel()
     // Read the memory buffer C_clmem on the device to the local variable C
     clStatus = clEnqueueReadBuffer(command_queue, C_clmem, CL_TRUE, 0,
             VECTOR_SIZE * sizeof(float), C, 0, NULL, NULL);
-	if(CL_SUCCESS != clStatus) printf("Koushik5"); 
+    if(CL_SUCCESS != clStatus) printf("Koushik5"); 
     // Clean up and wait for all the comands to complete.
     clStatus = clFlush(command_queue);
     clStatus = clFinish(command_queue);
@@ -1041,11 +1041,11 @@ void matrixMultSimpleKernel()
     for(i = 0; i < VECTOR_SIZE; i++)
         printf("dim=%d i=%d  A=%f  B=%f  C=%f\n", dimOfSq, i, A[i], B[i], C[i]);
 
-	if(resultIsCorrect(A,B,C,32))
-	{
-		printf("\nKernel 1 is OK");
-	}
-	
+    if(resultIsCorrect(A,B,C,32))
+    {
+        printf("\nKernel 1 is OK");
+    }
+    
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(kernel);
     clStatus = clReleaseProgram(program);
@@ -1066,7 +1066,7 @@ void matrixMultSimpleKernel()
 void matrixMultWithLocal()
 {
     int i;
-	//timeStamps[0] = getTime();
+    //timeStamps[0] = getTime();
 
     // Allocate space for vectors A, B and C
     int dimOfSq = 32;
@@ -1141,7 +1141,7 @@ void matrixMultWithLocal()
     clStatus = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&B_clmem);
     clStatus = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&C_clmem);
 
-	//Koushik DOne upto
+    //Koushik DOne upto
     // Execute the OpenCL kernel on the list
     size_t global_size = 32*32;
     size_t local_size = BLOCK_SIZE;   // BLOCK_SIZE is factor of 32
@@ -1157,16 +1157,16 @@ void matrixMultWithLocal()
     clStatus = clFinish(command_queue);
 
     // Display the result to the screen
-	printf("\n\n MATRIX MULTIPLICATION WITH LOCAL.......\n");
+    printf("\n\n MATRIX MULTIPLICATION WITH LOCAL.......\n");
 
     for(i = 0; i < VECTOR_SIZE; i++)
         printf("Dim= %f  A=%f  B=%f  C=%f\n", dimOfSq, A[i], B[i], C[i]);
-	if(resultIsCorrect(A,B,C,32))
-	{
-		printf("\nKernel 2 is OK");
-	}
-	
-	getchar();
+    if(resultIsCorrect(A,B,C,32))
+    {
+        printf("\nKernel 2 is OK");
+    }
+    
+    getchar();
 
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(kernel);
@@ -1186,7 +1186,7 @@ void matrixMultWithLocal()
 void matrixMultWithLocal2()
 {
     int i;
-	//timeStamps[0] = getTime();
+    //timeStamps[0] = getTime();
 
     // Allocate space for vectors A, B and C
     int dimOfSq = 32;
@@ -1261,7 +1261,7 @@ void matrixMultWithLocal2()
     clStatus = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&B_clmem);
     clStatus = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&C_clmem);
 
-	//Koushik DOne upto
+    //Koushik DOne upto
     // Execute the OpenCL kernel on the list
     size_t global_size = 32*32;
     size_t local_size = BLOCK_SIZE;   // BLOCK_SIZE is factor of 32
@@ -1277,16 +1277,16 @@ void matrixMultWithLocal2()
     clStatus = clFinish(command_queue);
 
     // Display the result to the screen
-	printf("\n\n MATRIX MULTIPLICATION WITH LOCAL.......\n");
+    printf("\n\n MATRIX MULTIPLICATION WITH LOCAL.......\n");
 
     for(i = 0; i < VECTOR_SIZE; i++)
         printf("Dim= %d  A=%f  B=%f  C=%f\n", dimOfSq, A[i], B[i], C[i]);
-	if(resultIsCorrect(A,B,C,32))
-	{
-		printf("\nKernel 2 is OK");
-	}
-	
-	getchar();
+    if(resultIsCorrect(A,B,C,32))
+    {
+        printf("\nKernel 2 is OK");
+    }
+    
+    getchar();
 
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(kernel);
@@ -1308,52 +1308,52 @@ int main(int argc, char** argv)
     int MATRIX_WIDTH = atoi(argv[1]);
 
     bool verify = true;
-	callMatrixMult1(MATRIX_WIDTH, MATRIX_WIDTH, verify);
-	//callMatrixMult2();
-	//matrixMultWithLocal2();
-	//matrixMultWithLocal();
-	//getchar();
+    callMatrixMult1(MATRIX_WIDTH, MATRIX_WIDTH, verify);
+    //callMatrixMult2();
+    //matrixMultWithLocal2();
+    //matrixMultWithLocal();
+    //getchar();
     return 0;
 }
 bool resultIsCorrect(float* pA,float* pB,float* pCTest, size_t dim)
 {
-	bool result = true;
-	long long int arrayLength = dim*dim;
-	float *pGoldenValue = (float *)malloc(sizeof(float)*arrayLength);
-	//for(long long int i=0; i<arrayLength;++i)
-	//{
-	//	printf("Koushik %");
-	//}
-	//compute the values
-	printf ("Computing Golden");
-	for(int i=0; i<dim; ++i)
-	{
-		for(int j=0; j<dim; ++j)
-		{
-			//init the (i,j)-th element to 0
-			pGoldenValue[i*dim+j] = 0;
-			//compute the (i,j)-th element
-			for(int k=0; k<dim; ++k)
-			{
-				pGoldenValue[i*dim + j] += pA[i*dim + k]*pB[k*dim + j];
-			}
-		}
-		printf (".");
-	}
-	int errorCount = 10;
-	for(long long int i=0; i<arrayLength && errorCount;++i)
-	{
-		if(pGoldenValue[i] != pCTest[i] )
-		{
-			errorCount--;
-			result =false;
-			printf("\n%d-th elements A=%f B=%f are %f and %f",i, pA[i], pB[i],pGoldenValue[i], pCTest[i] );
-		}
-	}
+    bool result = true;
+    long long int arrayLength = dim*dim;
+    float *pGoldenValue = (float *)malloc(sizeof(float)*arrayLength);
+    //for(long long int i=0; i<arrayLength;++i)
+    //{
+    //    printf("Koushik %");
+    //}
+    //compute the values
+    printf ("Computing Golden");
+    for(int i=0; i<dim; ++i)
+    {
+        for(int j=0; j<dim; ++j)
+        {
+            //init the (i,j)-th element to 0
+            pGoldenValue[i*dim+j] = 0;
+            //compute the (i,j)-th element
+            for(int k=0; k<dim; ++k)
+            {
+                pGoldenValue[i*dim + j] += pA[i*dim + k]*pB[k*dim + j];
+            }
+        }
+        printf (".");
+    }
+    int errorCount = 10;
+    for(long long int i=0; i<arrayLength && errorCount;++i)
+    {
+        if(pGoldenValue[i] != pCTest[i] )
+        {
+            errorCount--;
+            result =false;
+            printf("\n%d-th elements A=%f B=%f are %f and %f",i, pA[i], pB[i],pGoldenValue[i], pCTest[i] );
+        }
+    }
 
-	free(pGoldenValue);
+    free(pGoldenValue);
 
-	return result;
+    return result;
 }
 
 
