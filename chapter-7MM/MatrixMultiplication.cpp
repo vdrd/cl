@@ -1,4 +1,4 @@
-//If you want to build the file directly at the command prompt then use the following commands. 
+//If you want to build the file directly at the command prompt then use the following commands.
 //AMD commands
 //cl /c Example1_SAXPY.cpp /I"%AMDAPPSDKROOT%\include"
 //link  /OUT:"Example.exe" "%AMDAPPSDKROOT%\lib\x86_64\OpenCL.lib" Example1_SAXPY.obj
@@ -13,7 +13,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <CL/cl.h>
-//32 by 32 matrix 
+//32 by 32 matrix
 //#define VECTOR_SIZE 1048576
 //#define VECTOR_SIZE 1024
 //#define MATRIX_WIDTH 1024
@@ -253,7 +253,7 @@ const char *MatrixMul_kernel_RowPerWI_APriv =
 "       }                                                                                   \n"
 "       C[iRow*dim + j] = result;                                                           \n"
 "    }                                                                                      \n"
-"}                                                                                          \n";                
+"}                                                                                          \n";
 
 const char *MatrixMul_kernel_RowPerWI_APriv_BLocal =
 "__kernel                                                                                   \n"
@@ -341,128 +341,110 @@ const char *MatrixMul_kernel200 =
 "            }           \n"
 "            C[iCol + dim*iRowComputed] = privateSum;           \n"
 "        }// End of for(iCol=0;iCol< dim;++iCol)           \n"
-"    }// End of if(iRowComputed < dim)                                         \n"      
+"    }// End of if(iRowComputed < dim)                                         \n"
 "}                                                    \n";
 
 //================================================================
-//Same as "MatrixMul_kernel200" except B is saved in Column major form 
+//Same as "MatrixMul_kernel200" except B is saved in Column major form
 //to have better access pattern
 
 const char *MatrixMul_kernel300 =
-"__kernel                                             \n"
-"void MatrixMul_kernel300(int dim,                      \n"
-"                  __global float *A,                 \n"
-"                  __global float *B,                 \n"
-"                  __global float *C)                 \n"
-"{                                                    \n"
-"    //Get the index of the work-item                 \n"
-"    int iRowComputed = get_global_id(0);             \n"
-"    int iCol;                                        \n"
-"    int iLoop;                                                 \n"
-"    if(iRowComputed < dim) // valid row               \n"
-"    {           \n"
-"        //Take the iRowComputed-th Row in Private memory           \n"
-"        float privateAOneRow[MATRIX_DIM];           \n"
-"        for(int iLoop=0;iLoop< dim;++iLoop)           \n"
-"        {           \n"
+"__kernel                                                               \n"
+"void MatrixMul_kernel300(int dim,                                        \n"
+"                  __global float *A,                                   \n"
+"                  __global float *B,                                   \n"
+"                  __global float *C)                                   \n"
+"{                                                                      \n"
+"    //Get the index of the work-item                                   \n"
+"    int iRowComputed = get_global_id(0);                               \n"
+"    int iCol;                                                          \n"
+"    int iLoop;                                                                   \n"
+"    if(iRowComputed < dim) // valid row                                 \n"
+"    {                                                                              \n"
+"        //Take the iRowComputed-th Row in Private memory                                    \n"
+"        float privateAOneRow[MATRIX_DIM];                              \n"
+"        for(int iLoop=0;iLoop< dim;++iLoop)                              \n"
+"        {                                                                                       \n"
 "            privateAOneRow[iLoop] = A[iLoop + dim*iRowComputed];           \n"
-"        }           \n"
+"        }                                                                                             \n"
 "                                                                                                      \n"
 "        //This WI would compute entire row i.e. iCol=0 to dim           \n"
-"        for(int iCol=0;iCol< dim;++iCol)           \n"
-"        {           \n"
-"            float privateSum = 0.0;                       \n"
-"            for(int iLoop=0;iLoop< dim;++iLoop)           \n"
-"            {                                             \n"
-"                privateSum +=            \n"
-"                privateAOneRow[iLoop]*B[iLoop + iCol*dim];           \n"
-"            }           \n"
-"            C[iCol + dim*iRowComputed] = privateSum;           \n"
-"        }// End of for(int iCol=0;iCol< dim;++iCol)           \n"
-"    }// End of if(iRowComputed < dim)                                         \n"      
-"}                                                    \n";
+"        for(int iCol=0;iCol< dim;++iCol)                                                                   \n"
+"        {                                                                       \n"
+"            float privateSum = 0.0;                                            \n"
+"            for(int iLoop=0;iLoop< dim;++iLoop)                                \n"
+"            {                                                                  \n"
+"                privateSum +=                                                  \n"
+"                privateAOneRow[iLoop]*B[iLoop + iCol*dim];                     \n"
+"            }                                                                  \n"
+"            C[iCol + dim*iRowComputed] = privateSum;                                      \n"
+"        }// End of for(int iCol=0;iCol< dim;++iCol)                                      \n"
+"    }// End of if(iRowComputed < dim)                                                                    \n"
+"}                                                                               \n";
 
 //================================================================
 // Use of local for B, a bit more complex
 // each WG would have a copy of B to be used by all WIs of that WG
 // Who would copy ? Ok, equi-partition of task - each WI of that WG would do equal part of copy
-// 
+//
 
 const char *MatrixMul_kernel400 =
-"__kernel                                                                                             \n"
-"void MatrixMul_kernel400(int dim,                                                             \n"
-"                  __global float *A,                                                                \n"
-"                  __global float *B,                                                                \n"
-"                  __global float *C)                                                                \n"
-"{                                                                                                       \n"
-"    //Get the index of the work-item                                                        \n"
-"    int iRowComputed = get_global_id(0);                                                \n"
-"    int iLocId = get_local_id(0);                                                \n"
-"    int wgSize = get_local_size(0);                                                \n"
-"    int iCol;                                                                                          \n"
-"    int iLoop;                                                                                        \n"
-"    if(iRowComputed < dim) // valid row                                                   \n"
-"    {                                                                                                    \n"
-"        //Take the iRowComputed-th Row in Private memory                          \n"
-"        float4 privateAOneRow[8];// 8 = 32/4                                              \n"
-"        for(iLoop=0;iLoop< dim/4;iLoop+=1)                                              \n"
-"        {                                                                                                \n"
-"            privateAOneRow[iLoop].x = A[iLoop*4 + dim*iRowComputed];             \n"
-"            privateAOneRow[iLoop].y = A[iLoop*4 + dim*iRowComputed + 1];             \n"
-"            privateAOneRow[iLoop].z = A[iLoop*4 + dim*iRowComputed + 2];             \n"
-"            privateAOneRow[iLoop].w = A[iLoop*4 + dim*iRowComputed + 3];             \n"
-"        }                                                                                               \n"
-"                                                                                                        \n"
-"        __local float4 localBFull[256];\n"
-"        //This WI would compute entire row i.e. iCol=0 to dim                     \n"
-"        for(iCol=0;iCol< dim;++iCol)                                                       \n"
-"        {                                                                                                   \n"
-"            for(iLoop=iLocId;iLoop<dim/4 ;iLoop+=(wgSize*4))                                                   \n"
-"            { \n"
-"               localBFull[iLoop].x = B[iCol + iLoop*dim];              \n"
-"               localBFull[iLoop].y = B[iCol + (iLoop+1)*dim];              \n"
-"               localBFull[iLoop].z = B[iCol + (iLoop+2)*dim];              \n"
-"               localBFull[iLoop].w = B[iCol + (iLoop+3)*dim];              \n"
-"            } \n"
-"            barrier(CLK_LOCAL_MEM_FENCE);                                                              \n"
-"            float4 privateSum = (float4)0;                                                                   \n"
-"            float4 Avect = (float4)(0);                         \n"
-"            float4 Bvect = (float4)(0);                         \n"
-"            float4 sum = (float4)(0);                         \n"
-"            for(iLoop=0;iLoop< dim/4;++iLoop)                                            \n"
-"            {                                                                                               \n"
-"                privateSum +=                                                                   \n"
-"                privateAOneRow[iLoop]*localBFull[iLoop];                                 \n"
-"            }                                                                                                   \n"
-"            C[iCol + dim*iRowComputed] = privateSum.x +privateSum.y +privateSum.z +privateSum.w;                                 \n"
-"        }                                                                          \n"
-
-"    }// End of if(iRowComputed < dim)                                                               \n"      
-"}                                                                                                           \n";
-
-
-/*
-
-
-
-                               \n"
-"        }// End of for(int iCol=0;iCol< dim;++iCol)                                            \n"
-
-*/
-
-
-
-
-
-
-
-
+"__kernel                                                                      \n"
+"void MatrixMul_kernel400(int dim,                                             \n"
+"                  __global float *A,                                          \n"
+"                  __global float *B,                                          \n"
+"                  __global float *C)                                          \n"
+"{                                                                             \n"
+"    //Get the index of the work-item                                          \n"
+"    int iRowComputed = get_global_id(0);                                      \n"
+"    int iLocId = get_local_id(0);                                             \n"
+"    int wgSize = get_local_size(0);                                           \n"
+"    int iCol;                                                                 \n"
+"    int iLoop;                                                                \n"
+"    if(iRowComputed < dim) // valid row                                       \n"
+"    {                                                                         \n"
+"        //Take the iRowComputed-th Row in Private memory                      \n"
+"        float4 privateAOneRow[8];// 8 = 32/4                                  \n"
+"        for(iLoop=0;iLoop< dim/4;iLoop+=1)                                    \n"
+"        {                                                                     \n"
+"            privateAOneRow[iLoop].x = A[iLoop*4 + dim*iRowComputed];          \n"
+"            privateAOneRow[iLoop].y = A[iLoop*4 + dim*iRowComputed + 1];      \n"
+"            privateAOneRow[iLoop].z = A[iLoop*4 + dim*iRowComputed + 2];      \n"
+"            privateAOneRow[iLoop].w = A[iLoop*4 + dim*iRowComputed + 3];      \n"
+"        }                                                                     \n"
+"                                                                              \n"
+"        __local float4 localBFull[256];                                       \n"
+"        //This WI would compute entire row i.e. iCol=0 to dim                 \n"
+"        for(iCol=0;iCol< dim;++iCol)                                          \n"
+"        {                                                                     \n"
+"            for(iLoop=iLocId;iLoop<dim/4 ;iLoop+=(wgSize*4))                  \n"
+"            {                                                                 \n"
+"               localBFull[iLoop].x = B[iCol + iLoop*dim];                     \n"
+"               localBFull[iLoop].y = B[iCol + (iLoop+1)*dim];                 \n"
+"               localBFull[iLoop].z = B[iCol + (iLoop+2)*dim];                 \n"
+"               localBFull[iLoop].w = B[iCol + (iLoop+3)*dim];                 \n"
+"            }                                                                 \n"
+"            barrier(CLK_LOCAL_MEM_FENCE);                                     \n"
+"            float4 privateSum = (float4)0;                                    \n"
+"            float4 Avect = (float4)(0);                                       \n"
+"            float4 Bvect = (float4)(0);                                       \n"
+"            float4 sum = (float4)(0);                                         \n"
+"            for(iLoop=0;iLoop< dim/4;++iLoop)                                 \n"
+"            {                                                                 \n"
+"                privateSum +=                                                 \n"
+"                privateAOneRow[iLoop]*localBFull[iLoop];                      \n"
+"            }                                                                 \n"
+"            C[iCol + dim*iRowComputed] = privateSum.x +                       \n"
+"                                privateSum.y +privateSum.z +privateSum.w;     \n"
+"        }                                                                     \n"
+"    }// End of if(iRowComputed < dim)                                         \n"
+"}                                                                             \n";
 
 
 
 //OpenCL kernel with local memory.
-//Where are you passing BLOCK_SIZE to the kernel. Is this kernel compiling? 
-//I am sure it is not compiling. I don't know how it is working. 
+//Where are you passing BLOCK_SIZE to the kernel. Is this kernel compiling?
+//I am sure it is not compiling. I don't know how it is working.
 const char *MatrixMul_kernel2 =
 "__kernel __attribute__((reqd_work_group_size(BLOCK_SIZE, BLOCK_SIZE, 1)))                             \n"
 "void MatrixMul_kernel2(__global int *q,                                                               \n"
@@ -489,9 +471,9 @@ const char *MatrixMul_kernel2 =
 "    __local float SubB[BLOCK_SIZE][BLOCK_SIZE];                                                       \n"
 "    for (int k = 0; k < numTiles; k++)                                                                \n"
 "    {                                                                                                 \n"
-"    //koushik done upto                                                                                \n"
-"        SubA[iLocRow][iLocCol] = A[BLOCK_SIZE*iGroup + iLocRow + dim*(BLOCK_SIZE*k+iLocCol)];         \n"     
-"        SubB[iLocRow][iLocCol] = A[BLOCK_SIZE*iGroup + iLocRow + dim*(BLOCK_SIZE*k+iLocCol)];         \n"  
+"    //koushik done upto                                                                               \n"
+"        SubA[iLocRow][iLocCol] = A[BLOCK_SIZE*iGroup + iLocRow + dim*(BLOCK_SIZE*k+iLocCol)];         \n"
+"        SubB[iLocRow][iLocCol] = A[BLOCK_SIZE*iGroup + iLocRow + dim*(BLOCK_SIZE*k+iLocCol)];         \n"
 "        barrier(CLK_LOCAL_MEM_FENCE);                                                                 \n"
 "        for (int r = 0; r < BLOCK_SIZE; r+=4)                                                         \n"
 "        {                                                                                             \n"
@@ -561,7 +543,7 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
     //clGetDeviceInfo(device_list[0], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(buf_uint), &buf_uint, NULL);
     //clGetDeviceInfo(device_list[0], CL_DEVICE_MAX_COMPUTE_UNITS, 4, &buf_uint, &koushik);
     //printf("KOUSHIK FUN:  DEVICE_MAX_COMPUTE_UNITS = %u\n", (unsigned int)buf_uint);
-    
+
     // Create memory buffers on the device for each vector
     cl_mem A_clmem = clCreateBuffer(context, CL_MEM_READ_ONLY,
             MATRIX_WIDTH*MATRIX_HEIGHT * sizeof(float), NULL, &clStatus);
@@ -677,11 +659,11 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 #endif
 
     LOG_OCL_ERROR(clStatus, "clSetKernelArg Failed" );
-    
+
     // Execute the OpenCL kernel on the list
     size_t global_size[2];    size_t local_size[2];
 
-#ifdef ENABLE_LOCAL_A 
+#ifdef ENABLE_LOCAL_A
     global_size[0] = MATRIX_WIDTH;   global_size[1] = MATRIX_HEIGHT;
     local_size[0] =  256;    local_size[1] =  1;
 #endif
@@ -697,7 +679,7 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
     global_size[0] = 128;   global_size[1] = MATRIX_HEIGHT;
     local_size[0] =  128; local_size[1] =  1;
 #endif
-#ifdef ENABLE_BASIC 
+#ifdef ENABLE_BASIC
     global_size[0] = MATRIX_WIDTH;   global_size[1] = MATRIX_HEIGHT;
     local_size[0] =  BLOCK_SIZE;
     local_size[0] =  BLOCK_SIZE*2;
@@ -737,7 +719,7 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 
     cl_ulong startTime;
     cl_ulong endTime;
-    
+
     /* Get kernel profiling info */
     clStatus = clGetEventProfilingInfo(events,
                                      CL_PROFILING_COMMAND_START,
@@ -858,12 +840,12 @@ void callMatrixMult2()
     clStatus = clEnqueueWriteBuffer(command_queue, B_clmem, CL_TRUE, 0,
             VECTOR_SIZE * sizeof(float), B, 0, NULL, NULL);
 
-    // Create a program from the kernel source 
+    // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1,
             (const char **)&MatrixMul_kernel400, NULL, &clStatus);
 
     // Build the program
-    clStatus = clBuildProgram(program, 1, device_list, NULL, NULL, NULL); 
+    clStatus = clBuildProgram(program, 1, device_list, NULL, NULL, NULL);
     if(CL_SUCCESS != clStatus)
     {
         printf("KOUSHIK Kerne200 failed1 %d",clStatus);
@@ -889,12 +871,12 @@ void callMatrixMult2()
 
     clStatus = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
             &global_size, &local_size, 0, NULL, &events);
-    
+
     clWaitForEvents(1, &events);
 
     cl_ulong startTime;
     cl_ulong endTime;
-    
+
     /* Get kernel profiling info */
     clStatus = clGetEventProfilingInfo(events,
                                      CL_PROFILING_COMMAND_START,
@@ -902,19 +884,19 @@ void callMatrixMult2()
                                      &startTime,
                                      0);
 
-    if(CL_SUCCESS != clStatus) printf("\nKoushik11 %d", clStatus); 
+    if(CL_SUCCESS != clStatus) printf("\nKoushik11 %d", clStatus);
     clStatus = clGetEventProfilingInfo(events,
                                      CL_PROFILING_COMMAND_END,
                                      sizeof(cl_ulong),
                                      &endTime,
                                      0);
-    if(CL_SUCCESS != clStatus) printf("\nKoushik22 %d", clStatus); 
+    if(CL_SUCCESS != clStatus) printf("\nKoushik22 %d", clStatus);
     double sec = 1e-9 * (endTime - startTime);
 
     // Read the memory buffer C_clmem on the device to the local variable C
     clStatus = clEnqueueReadBuffer(command_queue, C_clmem, CL_TRUE, 0,
             VECTOR_SIZE * sizeof(float), C, 0, NULL, NULL);
-    if(CL_SUCCESS != clStatus) printf("Koushik33"); 
+    if(CL_SUCCESS != clStatus) printf("Koushik33");
     // Clean up and wait for all the comands to complete.
     clStatus = clFlush(command_queue);
     clStatus = clFinish(command_queue);
@@ -924,7 +906,7 @@ void callMatrixMult2()
     // Display the result to the screen
     for(i = 0; i < VECTOR_SIZE; i++)
         printf("\n%d-th Elements  A=%f B=%f C=%f", i, A[i], B[i], C[i]);
-    
+
     if(resultIsCorrect(A,B,C,MATRIX_DIM))
     {
         printf("\nKernel 200 is OK");
@@ -1010,19 +992,19 @@ void matrixMultSimpleKernel()
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1,
             (const char **)&MatrixMul_kernel1, NULL, &clStatus);
-    if(CL_SUCCESS != clStatus) printf("Koushik1"); 
+    if(CL_SUCCESS != clStatus) printf("Koushik1");
     // Build the program
     clStatus = clBuildProgram(program, 1, device_list, NULL, NULL, NULL);
-    if(CL_SUCCESS != clStatus) printf("Koushik2"); 
+    if(CL_SUCCESS != clStatus) printf("Koushik2");
     // Create the OpenCL kernel
     cl_kernel kernel = clCreateKernel(program, "MatrixMul_kernel1", &clStatus);
-    if(CL_SUCCESS != clStatus) printf("Koushik3"); 
+    if(CL_SUCCESS != clStatus) printf("Koushik3");
     // Set the arguments of the kernel
     clStatus = clSetKernelArg(kernel, 0, sizeof(int),    (void *)&dimOfSq);
     clStatus = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&A_clmem);
     clStatus = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&B_clmem);
     clStatus = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&C_clmem);
-    if(CL_SUCCESS != clStatus) printf("Koushik4"); 
+    if(CL_SUCCESS != clStatus) printf("Koushik4");
     // Execute the OpenCL kernel on the list
     size_t global_size = VECTOR_SIZE; // Process the entire lists
     size_t local_size = 32;           // Process one item at a time
@@ -1032,7 +1014,7 @@ void matrixMultSimpleKernel()
     // Read the memory buffer C_clmem on the device to the local variable C
     clStatus = clEnqueueReadBuffer(command_queue, C_clmem, CL_TRUE, 0,
             VECTOR_SIZE * sizeof(float), C, 0, NULL, NULL);
-    if(CL_SUCCESS != clStatus) printf("Koushik5"); 
+    if(CL_SUCCESS != clStatus) printf("Koushik5");
     // Clean up and wait for all the comands to complete.
     clStatus = clFlush(command_queue);
     clStatus = clFinish(command_queue);
@@ -1045,7 +1027,7 @@ void matrixMultSimpleKernel()
     {
         printf("\nKernel 1 is OK");
     }
-    
+
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(kernel);
     clStatus = clReleaseProgram(program);
@@ -1165,7 +1147,7 @@ void matrixMultWithLocal()
     {
         printf("\nKernel 2 is OK");
     }
-    
+
     getchar();
 
     // Finally release all OpenCL allocated objects and host buffers.
@@ -1285,7 +1267,7 @@ void matrixMultWithLocal2()
     {
         printf("\nKernel 2 is OK");
     }
-    
+
     getchar();
 
     // Finally release all OpenCL allocated objects and host buffers.
@@ -1303,7 +1285,7 @@ void matrixMultWithLocal2()
     free(device_list);
 }
 #endif
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
     int MATRIX_WIDTH = atoi(argv[1]);
 

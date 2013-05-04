@@ -13,5 +13,6 @@ SUBDIRS( chapter-1/
          chapter-4/
          chapter-6/
          chapter-7MM/
+         images/
          lbm/
          test/ )
