@@ -3,169 +3,14 @@
 #include <string.h>
 #include <stdio.h>
 #include <CL/cl.h>
-typedef struct {
-    const char * filename;
-    unsigned int height;
-    unsigned int width;
-    unsigned char *pixels;
-}Image;
-
-__pragma( pack(push, 1) ) 
-typedef struct
-{
-    unsigned char x;
-    unsigned char y;
-    unsigned char z;
-    unsigned char w;
-} ColorPalette;
-
-typedef ColorPalette PixelColor;
-
-typedef struct {
-    short id;
-    int size;
-    short reserved1;
-    short reserved2;
-    int offset;
-} BMPHeader ; 
-
-typedef struct {
-    unsigned int sizeInfo;
-    unsigned int width;
-    unsigned int height;
-    unsigned short planes;
-    unsigned short bitsPerPixel;
-    unsigned int compression;
-    unsigned int imageSize;
-    unsigned int xPelsPerMeter;
-    unsigned int yPelsPerMeter;
-    unsigned int clrUsed;
-    unsigned int clrImportant;
-}  BMPInfoHeader ;
-__pragma( pack(pop) )
-
-static const short bitMapID = 19778;
-
-void
-ReadBMPImage(std::string filename,  Image **image)
-{
-    BMPHeader header;
-    BMPInfoHeader infoHeader;
-    ColorPalette *colors_;
-    PixelColor   *pixelColor;
-    unsigned int numColors_;
-    // Open BMP file
-    FILE *fd;
-    *image = (Image *)calloc(1,sizeof(Image));
-    (*image)->filename = filename.c_str();
-    
-    fopen_s(&fd, (*image)->filename, "rb");
-    (*image)->width = 0;
-    (*image)->height = 0;
-    (*image)->pixels = NULL;
-    
-
-    // Opened OK
-    if (fd != NULL) {
-        // Read the BMP header
-        fread(&header, sizeof(BMPHeader), 1, fd);
-        if (ferror(fd)) {
-            fclose(fd);
-            goto fileReadFail;
-        }
-
-        // Confirm that we have a bitmap file
-        if (header.id != bitMapID) {
-            fclose(fd);
-            goto fileReadFail;
-        }
-
-        // Read map info header
-        fread(&infoHeader, sizeof(BMPInfoHeader), 1, fd);
-
-        // Failed to read map info header
-        if (ferror(fd)) {
-            fclose(fd);
-            return;
-        }
-
-        // Store number of colors
-        numColors_ = 1 << infoHeader.bitsPerPixel;
-
-        //load the palate for 8 bits per pixel
-        if(infoHeader.bitsPerPixel == 8) {
-            colors_ = (ColorPalette*)malloc(numColors_ * sizeof(ColorPalette));
-            fread( (char *)colors_, numColors_ * sizeof(ColorPalette), 1, fd);
-        }
-
-        // Allocate buffer to hold all pixels
-        unsigned int sizeBuffer = header.size - header.offset;
-        unsigned char *tmpPixels = (unsigned char*)malloc(sizeBuffer*sizeof(unsigned char));
-
-        // Read pixels from file, including any padding
-        fread(tmpPixels, sizeBuffer * sizeof(unsigned char), 1, fd);
-
-        // Allocate image
-        pixelColor = (PixelColor*)malloc(infoHeader.width * infoHeader.height*sizeof(PixelColor));
-
-        // Set image, including w component (white)
-        memset(pixelColor, 0xff, infoHeader.width * infoHeader.height * sizeof(PixelColor));
-
-        unsigned int index = 0;
-        for(unsigned int y = 0; y < infoHeader.height; y++) {
-            for(unsigned int x = 0; x < infoHeader.width; x++) {
-                // Read RGB values
-                if (infoHeader.bitsPerPixel == 8) {
-                    pixelColor[(y * infoHeader.width + x)] = colors_[tmpPixels[index++]];
-                }
-                else { // 24 bit
-					//pixelColor[(y * infoHeader.width + x)].w = 0;
-                    pixelColor[(y * infoHeader.width + x)].z = tmpPixels[index++];
-                    pixelColor[(y * infoHeader.width + x)].y = tmpPixels[index++];
-                    pixelColor[(y * infoHeader.width + x)].x = tmpPixels[index++];
-                }
-            }
-
-            // Handle padding
-            for(unsigned int x = 0; x < (4 - (3 * infoHeader.width) % 4) % 4; x++) {
-                index++;
-            }
-        }
-
-        // Loaded file so we can close the file.
-        fclose(fd);
-        free(tmpPixels);
-		if(infoHeader.bitsPerPixel == 8) {
-            free(colors_);
-        }
-        (*image)->width = infoHeader.width;
-        (*image)->height = infoHeader.height;
-        (*image)->pixels = (unsigned char *)pixelColor;
-        return;
-    }
-fileReadFail:
-    free (*image);
-    *image = NULL;    
-    return;
-}
-
-void ReleaseBMPImage(Image **image)
-{
-    if(*image != NULL)
-        if((*image)->pixels !=NULL)
-        {
-            free((*image)->pixels);
-            free(*image);
-        }
-    return;
-}
+#include <bmp_image.h>
 
 const char *histogram_kernel =
 "#define BIN_SIZE 256                                                                  \n"
 "#pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable                       \n"
 "__kernel                                                                              \n"
-"void histogram_kernel(__global const uint* data,                                      \n"
-"                  __local uchar* sharedArray,                                         \n"
+"void histogram_image_kernel(__read_only image2d_t data,                                      \n"
+"                  __read_only image2d_t sharedArray,                                         \n"
 "                  __global uint* binResultR,                                          \n"
 "                  __global uint* binResultG,                                          \n"
 "                  __global uint* binResultB)                                          \n"
@@ -177,6 +22,7 @@ const char *histogram_kernel =
 "     __local uchar* sharedArrayR = sharedArray;                                       \n"
 "     __local uchar* sharedArrayG = sharedArray + groupSize * BIN_SIZE;                \n"
 "     __local uchar* sharedArrayB = sharedArray + 2 * groupSize * BIN_SIZE;            \n"
+"     sampler_t smp = CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;                  \n"
 "                                                                                      \n"
 "    /* initialize shared array to zero */                                             \n"
 "    for(int i = 0; i < BIN_SIZE; ++i)                                                 \n"
@@ -241,7 +87,7 @@ int main(int argc, char *argv[])
     cl_uint  *deviceBinR,*deviceBinG,*deviceBinB;
     //Read a BMP Image
     Image *image;
-    std::string filename = "sample_color_small.bmp";
+    std::string filename = "sample_color.bmp";
     ReadBMPImage(filename, &image);
     if(image == NULL)
         return 0;
@@ -306,13 +152,13 @@ int main(int argc, char *argv[])
 	image_desc.buffer= NULL;
     cl_mem clImage = clCreateImage(
         context,
-        CL_MEM_READ_ONLY,
+        CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR,
         &image_format,
         &image_desc,
-		image->pixels,
+		image->pixels, //R,G,B,A, R,G,B,A, R,G,B,A
         &status); 
     if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateImage";
+        std::cout << "Error # "<< status<<":: clCreateImage\n";
 	//Create OpenCL device output buffer
     intermediateHistR = clCreateBuffer(
         context, 
@@ -353,7 +199,7 @@ int main(int argc, char *argv[])
         std::cout << "Error # "<< status<<":: clBuildProgram";
 
     // Create the OpenCL kernel
-    cl_kernel kernel = clCreateKernel(program, "histogram_kernel", &status);
+    cl_kernel kernel = clCreateKernel(program, "histogram_image_kernel", &status);
 
     // Set the arguments of the kernel
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&clImage); 
