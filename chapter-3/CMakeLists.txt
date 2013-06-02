@@ -1,4 +1,4 @@
-add_executable( histogram histogram.cpp ) 
+add_executable( histogram histogram.cpp ../common/bmp_image.cpp) 
 target_link_libraries( histogram ${OPENCL_LIBRARIES} )  
 
 add_executable( bufferRect bufferRect.cpp ) 
