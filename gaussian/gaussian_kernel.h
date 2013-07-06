@@ -2,7 +2,7 @@
 #define OCL_GAUSSIAN_KERNEL_H
 static const char *gaussian_kernel =
 "                                                                                                      \n"
-"__constant sampler_t mysampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE;             \n"
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE;             \n"
 "                                                                                                      \n"
 "__kernel void gaussian_filter_kernel(__read_only image2d_t iimage, __write_only image2d_t oimage,     \n"
 "                                         __global float *filter, int windowSize)                      \n"
@@ -16,7 +16,7 @@ static const char *gaussian_kernel =
 "                                                                                                      \n"
 "    for(i=-halfWindow, ifilter=0; i<=halfWindow; i++, ifilter++){                                     \n"
 "       for(j=-halfWindow, jfilter=0; j<=halfWindow; j++, jfilter++){                                  \n"
-"           pixelValue = read_imagef(iimage, mysampler, (int2)(x+i, y+j));                             \n"
+"           pixelValue = read_imagef(iimage, image_sampler, (int2)(x+i, y+j));                             \n"
 "           computedFilter += filter[ifilter*windowSize+jfilter]*pixelValue;                           \n"
 "       }                                                                                              \n"
 "    }                                                                                                 \n"

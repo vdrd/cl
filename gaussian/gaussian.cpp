@@ -17,12 +17,12 @@ ImageFilter::ImageFilter(string &_filename)
     host_image = NULL;
     filename = _filename;
     load_bmp_image();
-    setup_filter();    
+    setup_filter();
 }
 
 void ImageFilter::setup_filter( )
 {
-    float lFilter[WINDOW_SIZE*WINDOW_SIZE] = {  1.f/16,  2.f/16,  1.f/16, 
+    float lFilter[WINDOW_SIZE*WINDOW_SIZE] = {  1.f/16,  2.f/16,  1.f/16,
                                                 2.f/16,  4.f/16,  2.f/16,
                                                 1.f/16,  2.f/16,  1.f/16  };
     memcpy(filter, lFilter, WINDOW_SIZE*WINDOW_SIZE*sizeof(float));
@@ -36,7 +36,7 @@ void ImageFilter::load_bmp_image( )
 void ImageFilter::write_bmp_image( )
 {
     std::string filteredFileName("filtered.bmp") ;
-    WriteBMPGrayscaleImageFloat(filteredFileName, &image, GPU_output); 
+    WriteBMPGrayscaleImageFloat(filteredFileName, &image, GPU_output);
 }
 
 void ImageFilter::read_GPU_filtered_image()
@@ -79,7 +79,7 @@ void ImageFilter::cleanup()
 void ImageFilter::init_GPU_OpenCL( )
 {
 	//Allocate GPU output image memory
-	GPU_output = NULL; 
+	GPU_output = NULL;
     GPU_output = (float*) calloc(1, image->height*image->width*sizeof(float) );
 
     setupOCLPlatform();
@@ -95,17 +95,17 @@ void ImageFilter::init_GPU_OpenCL( )
 void ImageFilter::setupOCLPlatform()
 {
     cl_int status;
-	//Setup the OpenCL Platform, 
+	//Setup the OpenCL Platform,
 	//Get the first available platform. Use it as the default platform
     status = clGetPlatformIDs(1, &platform, NULL);
     LOG_OCL_ERROR(status, "Error # clGetPlatformIDs" );
 
-	//Get the first available device 
+	//Get the first available device
     status = clGetDeviceIDs (platform, deviceType, 1, &device, NULL);
     LOG_OCL_ERROR(status, "Error # clGetDeviceIDs" );
-	
-	//Create an execution context for the selected platform and device. 
-    cl_context_properties cps[3] = 
+
+	//Create an execution context for the selected platform and device.
+    cl_context_properties cps[3] =
     {
         CL_CONTEXT_PLATFORM,
         (cl_context_properties)platform,
@@ -165,7 +165,7 @@ cl_int ImageFilter::setupOCLbuffers()
     cl_image_desc image_desc;
 	image_format.image_channel_data_type = CL_FLOAT;
 	image_format.image_channel_order = CL_R;
-	
+
 	image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
 	image_desc.image_width = image->width;
 	image_desc.image_height = image->height;
@@ -173,23 +173,23 @@ cl_int ImageFilter::setupOCLbuffers()
 	image_desc.image_array_size = 1;
     //Note when the host_ptr is NULL row_pitch and slice_pith should be set to 0;
     //Otherwise you will get a CL_INVALID_IMAGE_DESCRIPTOR error
-	image_desc.image_row_pitch = 0; 
+	image_desc.image_row_pitch = 0;
 	image_desc.image_slice_pitch = 0;
 	image_desc.num_mip_levels = 0;
 	image_desc.num_samples = 0;
 	image_desc.buffer= NULL;
-    ocl_raw = clCreateImage(
+    ocl_input_image = clCreateImage(
         context,
         CL_MEM_READ_ONLY,
         &image_format,
         &image_desc,
-		NULL, 
-        &status); 
+		NULL,
+        &status);
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
 
     //Note when the host_ptr is NULL row_pitch and slice_pith should be set to 0;
     //Otherwise you will get a CL_INVALID_IMAGE_DESCRIPTOR error
-	image_desc.image_row_pitch = 0; 
+	image_desc.image_row_pitch = 0;
 	image_desc.image_slice_pitch = 0;
 
     ocl_filtered_image = clCreateImage(
@@ -197,16 +197,16 @@ cl_int ImageFilter::setupOCLbuffers()
         CL_MEM_WRITE_ONLY,
         &image_format,
         &image_desc,
-		NULL, 
-        &status); 
+		NULL,
+        &status);
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
 
     ocl_filter = clCreateBuffer(
         context,
         CL_MEM_READ_WRITE|CL_MEM_USE_HOST_PTR,
         WINDOW_SIZE*WINDOW_SIZE*sizeof(float),
-		filter, 
-        &status); 
+		filter,
+        &status);
     LOG_OCL_ERROR(status, "clCreateBuffer Failed" );
 
 	//Create OpenCL device output buffer
@@ -224,12 +224,12 @@ void ImageFilter::run_gaussian_filter_kernel()
 {
 	cl_event	wlist[2];
     cl_int status;
-    
+
     int windowSize = WINDOW_SIZE;
-    status = clSetKernelArg(gd_kernel, 0, sizeof(cl_mem), (void*)&ocl_raw); 
+    status = clSetKernelArg(gd_kernel, 0, sizeof(cl_mem), (void*)&ocl_raw);
     status = clSetKernelArg(gd_kernel, 1, sizeof(cl_mem), (void*)&ocl_filtered_image);
     status = clSetKernelArg(gd_kernel, 2, sizeof(cl_mem), (void*)&ocl_filter);
-    status = clSetKernelArg(gd_kernel, 3, sizeof(int), (void*)&windowSize); 
+    status = clSetKernelArg(gd_kernel, 3, sizeof(int), (void*)&windowSize);
     status = clEnqueueNDRangeKernel(
                         commandQueue,
                         gd_kernel,
