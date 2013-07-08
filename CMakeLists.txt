@@ -14,8 +14,8 @@ SUBDIRS( chapter-1/
          chapter-6/
          chapter-7MM/
          images/
-         lbm/
          test/
          gaussian/
          jpeg/
+         cl_gl_interop/
          )
