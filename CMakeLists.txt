@@ -17,5 +17,4 @@ SUBDIRS( chapter-1/
          test/
          gaussian/
          jpeg/
-         cl_gl_interop/
          )
