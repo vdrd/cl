@@ -13,6 +13,7 @@ SUBDIRS( chapter-1/
          chapter-4/
          chapter-6/
          chapter-7MM/
+         chapter-11/
          images/
          test/
          gaussian/

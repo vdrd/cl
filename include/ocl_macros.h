@@ -3,7 +3,7 @@
 
 #define LOG_OCL_ERROR(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d", __LINE__ ); printf(STRING); printf("Error= %d",x);}
 
-#define LOG_OCL_COMPILER_ERROR(PROGRAM, DEVICE)            \
+#define LOG_OCL_COMPILER_ERROR(PROGRAM, DEVICE)                                          \
         {                                                                                \
             cl_int logStatus;                                                            \
             char * buildLog = NULL;                                                      \
@@ -49,5 +49,39 @@
             free(buildLog);                                                              \
         } 
 
+/* Get platform information and set up the Platform for the defined vendor*/                                                            
+#define OCL_CREATE_PLATFORM( VENDOR, PLATFORM )                                      \
+    cl_uint     num_platforms;                                                        \
+    if ((clGetPlatformIDs(0, NULL, &num_platforms)) == CL_SUCCESS)                    \
+    {                                                                                 \
+        PLATFORM = (cl_platform_id *)malloc(sizeof(cl_platform_id)*num_platforms);    \
+        if(clGetPlatformIDs(num_platforms, PLATFORM, NULL) != CL_SUCCESS)             \
+        {                                                                             \
+            free(PLATFORM);                                                           \
+            exit(-1);                                                                 \
+        }                                                                             \
+    }                                                                                 
 
+/*Release the Allocated Platforms*/
+#define OCL_RELEASE_PLATFORMS( PLATFORM )                                                 \
+    free(PLATFORM);
+
+#define OCL_CREATE_DEVICE( PLATFORM, DEVICE_TYPE, DEVICES )                                 \
+    cl_uint     num_devices;                                                                \
+    if (clGetDeviceIDs( PLATFORM, DEVICE_TYPE, 0,                                           \
+            NULL, &num_devices) == CL_SUCCESS)                                              \
+    {                                                                                       \
+        DEVICES = (cl_device_id *)malloc(sizeof(cl_device_id)*num_devices);                 \
+        if (clGetDeviceIDs( PLATFORM, DEVICE_TYPE, num_devices,                             \
+            DEVICES, NULL) != CL_SUCCESS)                                                   \
+        {                                                                                   \
+            free(DEVICES);                                                                  \
+            exit(-1);                                                                       \
+        }                                                                                   \
+    }
+    
+/*Release the Allocated Device*/
+#define OCL_RELEASE_DEVICES( DEVICES )                                                 \
+    free(DEVICES);
+    
 #endif
