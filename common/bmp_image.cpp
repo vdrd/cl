@@ -240,7 +240,7 @@ void ReadBMPGrayscaleImageFloat(std::string filename,  Image **image)
         memset(pixelColor, 0xff, infoHeader.width * infoHeader.height * sizeof(unsigned char));
         // Read pixels from file, including any padding
         fread(pixelColor, sizeBuffer * sizeof(unsigned char), 1, fd);
-        for (int i =0;i<sizeBuffer; i++ )
+        for (unsigned int i =0;i<sizeBuffer; i++ )
             pixelColorFloat[i] = (float)pixelColor[i];
         // Loaded file so we can close the file.
         fclose(fd);
@@ -258,14 +258,14 @@ ReadFailed:
 
 void WriteBMPGrayscaleImageFloat(std::string filename,  Image **image, float*imgBuffer)
 {
-    BMPHeader header;
-    BMPInfoHeader infoHeader;
+    //BMPHeader header;
+    //BMPInfoHeader infoHeader;
     unsigned char *pixelColor;
-    unsigned int numColors_;
+    //unsigned int numColors_;
     int width, height;
     // Open BMP file
     FILE *fd;
-    unsigned char *pixelBuffer;
+    //unsigned char *pixelBuffer;
     width = (*image)->width;
     height = (*image)->height;
     fopen_s(&fd, filename.c_str(), "wb");
@@ -274,12 +274,11 @@ void WriteBMPGrayscaleImageFloat(std::string filename,  Image **image, float*img
 
     for(int i=0; i < (width * height); i++)
     {
-        pixelColor[i] = imgBuffer[i];
+        pixelColor[i] = (unsigned char)imgBuffer[i];
     }
     fwrite(pixelColor, (*image)->width * (*image)->height, 1, fd);
     free (pixelColor);
     fclose(fd);
-WriteFailed:
    return;
 }
 

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <CL/cl.h>
+#include <ocl_macros.h>
 #include <bmp_image.h>
 
 const char *histogram_kernel =
@@ -86,10 +87,13 @@ int main(int argc, char *argv[])
     cl_uint  *deviceBinR,*deviceBinG,*deviceBinB;
     //Read a BMP Image
     Image *image;
-    std::string filename = "sample_color_small.bmp";
+    std::string filename = "sample_color.bmp";
     ReadBMPImage(filename, &image);
     if(image == NULL)
+    {
+        printf("File %s not present...\n", filename.c_str());
         return 0;
+    }
     subHistgCnt  = (image->width * image->height)/(binSize*groupSize);
     midDeviceBinR = (cl_uint*)malloc(binSize * subHistgCnt * sizeof(cl_uint));
     midDeviceBinG = (cl_uint*)malloc(binSize * subHistgCnt * sizeof(cl_uint));
@@ -101,13 +105,11 @@ int main(int argc, char *argv[])
 	//Setup the OpenCL Platform, 
 	//Get the first available platform. Use it as the default platform
     status = clGetPlatformIDs(1, &platform, NULL);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clGetPlatformIDs";
+    LOG_OCL_ERROR(status, "clGetPlatformIDs Failed." );
 
 	//Get the first available device 
     status = clGetDeviceIDs (platform, dType, 1, &device, NULL);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clGetDeviceIDs";
+    LOG_OCL_ERROR(status, "clGetDeviceIDs Failed." );
 	
 	//Create an execution context for the selected platform and device. 
     cl_context_properties cps[3] = 
@@ -122,16 +124,14 @@ int main(int argc, char *argv[])
         NULL,
         NULL,
         &status);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateContextFromType";
+    LOG_OCL_ERROR(status, "clCreateContextFromType Failed." );
 
     // Create command queue
     commandQueue = clCreateCommandQueue(context,
                                         device,
                                         0,
                                         &status);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateCommandQueue";
+    LOG_OCL_ERROR(status, "clCreateCommandQueue Failed." );
 
 	//Create OpenCL device input buffer
     imageBuffer = clCreateBuffer(
@@ -140,8 +140,8 @@ int main(int argc, char *argv[])
         sizeof(cl_uint) * image->width * image->height,
         NULL,
         &status); 
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateBuffer";
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed while creating the image buffer." );
+
     //Set input data 
     cl_event writeEvt;
     status = clEnqueueWriteBuffer(commandQueue,
@@ -153,12 +153,10 @@ int main(int argc, char *argv[])
                                   0,
                                   NULL,
                                   &writeEvt);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clEnqueueWriteBuffer";
+    LOG_OCL_ERROR(status, "clEnqueueWriteBuffer Failed while writing the image data." );
 
     status = clFinish(commandQueue);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clFlush";
+    LOG_OCL_ERROR(status, "clFinish Failed while writing the image data." );
 	
 	//Create OpenCL device output buffer
     intermediateHistR = clCreateBuffer(
@@ -167,8 +165,7 @@ int main(int argc, char *argv[])
         sizeof(cl_uint) * binSize * subHistgCnt, 
         NULL, 
         &status);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateBuffer";
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed." );
 
     intermediateHistG = clCreateBuffer(
         context,
@@ -176,8 +173,7 @@ int main(int argc, char *argv[])
         sizeof(cl_uint) * binSize * subHistgCnt,
         NULL,
         &status);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateBuffer";
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed." );
 
     intermediateHistB = clCreateBuffer(
         context,
@@ -185,29 +181,28 @@ int main(int argc, char *argv[])
         sizeof(cl_uint) * binSize * subHistgCnt,
         NULL,
         &status);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateBuffer";
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed." );
 
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1,
             (const char **)&histogram_kernel, NULL, &status);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateProgramWithSource";
+    LOG_OCL_ERROR(status, "clCreateProgramWithSource Failed." );
 
     // Build the program
     status = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clBuildProgram";
+        LOG_OCL_COMPILER_ERROR(program, device);
 
     // Create the OpenCL kernel
     cl_kernel kernel = clCreateKernel(program, "histogram_kernel", &status);
-
+    LOG_OCL_ERROR(status, "clCreateKernel Failed." );
     // Set the arguments of the kernel
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&imageBuffer); 
-    status = clSetKernelArg(kernel, 1, 3 * groupSize * binSize * sizeof(cl_uchar), NULL); 
-    status = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&intermediateHistR);
-    status = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&intermediateHistG);
-    status = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&intermediateHistB);
+    status |= clSetKernelArg(kernel, 1, 3 * groupSize * binSize * sizeof(cl_uchar), NULL); 
+    status |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&intermediateHistR);
+    status |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&intermediateHistG);
+    status |= clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&intermediateHistB);
+    LOG_OCL_ERROR(status, "clSetKernelArg Failed." );
     // Execute the OpenCL kernel on the list
     cl_event ndrEvt;
     size_t globalThreads = (image->width * image->height) / (binSize*groupSize) * groupSize;
@@ -222,12 +217,11 @@ int main(int argc, char *argv[])
         0,
         NULL,
         &ndrEvt);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clEnqueueNDRangeKernel";
+    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel Failed." );
 
-    status = clFlush(commandQueue);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clFlush";
+    status = clFinish(commandQueue);
+    LOG_OCL_ERROR(status, "clFinish Failed." );
+
     //Read the histogram back into the host memory.
     memset(deviceBinR, 0, binSize * sizeof(cl_uint));
     memset(deviceBinG, 0, binSize * sizeof(cl_uint));
@@ -243,8 +237,7 @@ int main(int argc, char *argv[])
         0,
         NULL,
         &readEvt[0]);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clEnqueueReadBuffer";
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer of intermediateHistR Failed." );
     
     status = clEnqueueReadBuffer(
         commandQueue,
@@ -256,8 +249,7 @@ int main(int argc, char *argv[])
         0,
         NULL,
         &readEvt[1]);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clEnqueueReadBuffer";
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer of intermediateHistG Failed." );
     
     status = clEnqueueReadBuffer(
         commandQueue,
@@ -269,13 +261,11 @@ int main(int argc, char *argv[])
         0,
         NULL,
         &readEvt[2]);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clEnqueueReadBuffer";
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer of intermediateHistB Failed." );
     
     status = clWaitForEvents(3, readEvt);
     //status = clFinish(commandQueue);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clFinish";
+    LOG_OCL_ERROR(status, "clWaitForEvents for readEvt." );
 
     // Calculate final histogram bin 
     for(int i = 0; i < subHistgCnt; ++i)

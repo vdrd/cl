@@ -4,7 +4,7 @@
 #include <CL/cl.h>
 #include <ocl_macros.h>
 
-#define NUM_OF_POINTS 1024
+#define NUM_OF_POINTS 4096
 #define WORK_GROUP_SIZE 64
 
 //OpenCL kernel which is run for every work item created.
@@ -109,7 +109,7 @@ float determinant3By3(
 					  float c3
 					  )
 {
-	float det = a1*b2*c3 - a1*b2*c3;
+	float det = a1*b2*c3 - a1*b3*c2;
 	det += a3*b1*c2 - a2*b1*c3;
 	det += a2*b3*c1 - a3*b2*c1;
 	return det;
@@ -135,6 +135,8 @@ void findParabolla(
 	float detA = determinant3By3((float)N, sumX,   sumXX,
 		                          sumX,    sumXX,  sumXXX,
 								  sumXX,   sumXXX, sumXXXX);
+
+
 	if( 0.f == detA)
 	{
 		*resultValid = false;
@@ -144,7 +146,7 @@ void findParabolla(
 	float detA0 = determinant3By3(sumY, sumX,   sumXX,
 		                          sumXY,    sumXX,  sumXXX,
 								  sumXXY,   sumXXX, sumXXXX);
-
+    std::cout <<"KOushik " << detA0;
 	float detA1 = determinant3By3((float)N, sumY,   sumXX,
 		                          sumX,    sumXY,  sumXXX,
 								  sumXX,   sumXXY, sumXXXX);
@@ -168,23 +170,57 @@ int main(void) {
     cl_int clStatus;
     float *pX = (float*)malloc(sizeof(float)*NUM_OF_POINTS);
     float *pY = (float*)malloc(sizeof(float)*NUM_OF_POINTS);
-    float A0 = 2.0f;
-    float A1 = 0.5f;
-    float A2 = 0.5f;
+    float A0 = 50.0f;
+    float A1 = 3.5f;
+    float A2 = 0.89f;
     for (i = 0; i < NUM_OF_POINTS; i++)
     {
         pX[i] = (float)i;
-        pY[i] = (float)(A0*i*i + A1*i + A2);
+        pY[i] = (float)(A2*i*i + A1*i + A0);
     }
     //Verification Code
-    //float vSum = 0.0f;
-    //for (i = 0; i < NUM_OF_POINTS; i++)
-    //{
-    //    vSum += pX[i]*pX[i]*pY[i];
-    //}
-    //std::cout << "sumxxy = " << vSum << "\n";
-
-
+    float vSum = 0.0f;
+    for (i = 0; i < NUM_OF_POINTS; i++)
+    {
+        vSum += pX[i]*pX[i]*pY[i];
+    }
+    std::cout << "sumxxy = " << vSum << "\n";
+vSum = 0.0f;
+    for (i = 0; i < NUM_OF_POINTS; i++)
+    {
+        vSum += pY[i];
+    }
+    std::cout << "sumy = " << vSum << "\n";
+vSum = 0.0f;
+    for (i = 0; i < NUM_OF_POINTS; i++)
+    {
+        vSum += pX[i];
+    }
+    std::cout << "sumx = " << vSum << "\n";
+vSum = 0.0f;
+    for (i = 0; i < NUM_OF_POINTS; i++)
+    {
+        vSum += pX[i]*pY[i];
+    }
+    std::cout << "sumxy = " << vSum << "\n";
+vSum = 0.0f;
+    for (i = 0; i < NUM_OF_POINTS; i++)
+    {
+        vSum += pX[i]*pX[i];
+    }
+    std::cout << "sumxx = " << vSum << "\n";
+vSum = 0.0f;
+    for (i = 0; i < NUM_OF_POINTS; i++)
+    {
+        vSum += pX[i]*pX[i]*pX[i];
+    }
+    std::cout << "sumxxx = " << vSum << "\n";
+vSum = 0.0f;
+    for (i = 0; i < NUM_OF_POINTS; i++)
+    {
+        vSum += pX[i]*pX[i]*pX[i]*pX[i];
+    }
+    std::cout << "sumxxxx = " << vSum << "\n";
     // Get platform and device information
     cl_platform_id * platforms = NULL;
     //Set up the Platform
