@@ -5,7 +5,7 @@
 #include <CL/cl.h>
 #include <ocl_macros.h>
 #include <bmp_image.h>
-
+#define USE_HOST_MEMORY
 const char *histogram_kernel =
 "#define BIN_SIZE 256                                                                  \n"
 "#pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable                       \n"
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
                                         0,
                                         &status);
     LOG_OCL_ERROR(status, "clCreateCommandQueue Failed." );
-
+#if !defined(USE_HOST_MEMORY)
 	//Create OpenCL device input buffer
     imageBuffer = clCreateBuffer(
         context,
@@ -154,7 +154,16 @@ int main(int argc, char *argv[])
                                   NULL,
                                   &writeEvt);
     LOG_OCL_ERROR(status, "clEnqueueWriteBuffer Failed while writing the image data." );
-
+#else
+    //Create OpenCL device input buffer
+    imageBuffer = clCreateBuffer(
+        context,
+        CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR,
+        sizeof(cl_uint) * image->width * image->height,
+        image->pixels,
+        &status); 
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed while creating the image buffer." );
+#endif
     status = clFinish(commandQueue);
     LOG_OCL_ERROR(status, "clFinish Failed while writing the image data." );
 	

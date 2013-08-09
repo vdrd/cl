@@ -1,38 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
 #include <CL/cl.h>
 #include <ocl_macros.h>
+
+#define DATA_SIZE 1024
+#define NUM_CLASSES 3
+
 #define NUM_OF_POINTS 1024
 #define WORK_GROUP_SIZE 64
 #define K_CLASSIFICATION_POINTS 16
-/*Change in the below struct should result in the OpenCL code change also */
+//Change in the below struct should result in the OpenCL code change also 
 typedef struct {     
     int x;   
     int y;   
-    int z;   
+    int classification;
 } point; 
-             
-point matchPoint = {12,13,14};
+
+//We will keep the calssification as zero for now.
+point matchPoint = {12,13,0};
 
 //OpenCL kernel which is run for every work item created.
 const char *knn_classification_kernel =
-"#define DATA_TYPE float                                                                \n"
+"#define DISTANCE_TYPE float                                                            \n"
 "                                                                                       \n"
 "typedef struct {                                                                       \n"
 "    int x;                                                                             \n"
 "    int y;                                                                             \n"
-"    int z;                                                                             \n"
-"} point;                                                                                \n"
+"    int classification;                                                                \n"
+"} point;                                                                               \n"
 "                                                                                       \n"
 "typedef point POINT;                                                                   \n"
 "                                                                                       \n"
-"DATA_TYPE point_distance(POINT from, POINT to)                                         \n"
+"DISTANCE_TYPE point_distance(POINT from, POINT to)                                     \n"
 "{                                                                                      \n"
-"    DATA_TYPE distance = 0.0f;                                                         \n"
+"    DISTANCE_TYPE distance = 0.0f;                                                     \n"
 "    distance += (from.x - to.x)*(from.x - to.x);                                       \n"
 "    distance += (from.y - to.y)*(from.y - to.y);                                       \n"
-"    distance += (from.z - to.z)*(from.z - to.z);                                       \n"
 "    return sqrt ( distance );                                                          \n"
 "}                                                                                      \n"
 "                                                                                       \n"
@@ -41,24 +46,25 @@ const char *knn_classification_kernel =
 "void knn_distance_kernel(                                                              \n"        
 "                    POINT match,                                                       \n"    
 "                  __global POINT *data_set,                                            \n"    
-"                  __global DATA_TYPE *distance_data)                                   \n"        
+"                  __global DISTANCE_TYPE *distance_data)                               \n"        
 "{                                                                                      \n"        
 "    //Get the index of the work-item                                                   \n"        
 "    int gid   = get_global_id (0);                                                     \n"           
 "    int lid   = get_local_id (0);                                                      \n"                                                                                                         
 "    POINT read_point = data_set[gid];                                                  \n"                     
-"    DATA_TYPE computed_distance = point_distance (read_point, match );                 \n"                                                                        
+"    DISTANCE_TYPE computed_distance = point_distance (read_point, match );             \n"                                                                        
 "                                                                                       \n"        
 "    distance_data[gid] = computed_distance;                                            \n"
-"    //printf(\"x=%d y=%d z=%d == distance =%f\\n\",read_point.x, read_point.y, read_point.z, computed_distance);               \n"
+"    //printf(\"x=%d y=%d z=%d \",read_point.x, read_point.y, read_point.classification); \n"
+"    //printf(\"compute distance =%f\\n\", computed_distance);                          \n"
 "    //You may want to sort here locally first;                                         \n"
 "}                                                                                      \n"
 "                                                                                       \n"
 "                                                                                       \n"
 "                                                                                       \n"
-"//TODO simplify this kernel to do an Ascending sort only.                              \n"
+"//The bitonic sort kernel does an ascending sort                                       \n"
 "kernel                                                                                 \n"
-"void knn_bitonic_sort_kernel(__global DATA_TYPE * input_ptr,                           \n"
+"void knn_bitonic_sort_kernel(__global DISTANCE_TYPE * input_ptr,                           \n"
 "                 __global POINT *data_set,                                             \n"
 "                 const uint stage,                                                     \n"
 "                 const uint passOfStage )                                              \n"
@@ -70,11 +76,11 @@ const char *knn_classification_kernel =
 "    uint leftId = (threadId & (pairDistance -1))                                       \n"
 "                       + (threadId >> (stage - passOfStage) ) * blockWidth;            \n"
 "    bool compareResult;                                                                \n"
-"    //printf(\"bs_kernel = %d \\n\",get_global_id(0));                                                                                   \n"
+"    //printf(\"bs_kernel = %d \\n\",get_global_id(0));                                 \n"
 "    uint rightId = leftId + pairDistance;                                              \n"
 "                                                                                       \n"
-"    DATA_TYPE leftElement, rightElement;                                               \n"
-"    DATA_TYPE greater, lesser;                                                         \n"
+"    DISTANCE_TYPE leftElement, rightElement;                                           \n"
+"    DISTANCE_TYPE greater, lesser;                                                     \n"
 "    POINT     leftPoint, rightPoint;                                                   \n"
 "    POINT     greaterPoint, lesserPoint;                                               \n"
 "    leftElement  = input_ptr[leftId];                                                  \n"
@@ -99,22 +105,57 @@ const char *knn_classification_kernel =
 "    input_ptr[leftId]  = lesser;                                                       \n"
 "    data_set[leftId]   = lesserPoint;                                                  \n"
 "    input_ptr[rightId] = greater;                                                      \n"
-"    data_set[rightId]  = greaterPoint;                                                  \n"
+"    data_set[rightId]  = greaterPoint;                                                 \n"
 "}                                                                                      \n";
 
+// This function reads a file of points and its classifications. 
+// Each line in the file is of the form. 
+// <x-coord> <y-coord> <point-classification>
+//
+// points - is the data structure consisting of points in 2D coordinate space. 
+// numPoints - Number of files to be read from the file
 
+bool readKNNData(point *pPoints, int numPoints)
+{
+	if( (NULL == pPoints) )
+	{
+		return false;
+	}
+    // 
+	std::ifstream inputFile("kNNData.txt");
+
+	if(!inputFile.is_open())
+	{
+		return false;
+	}
+	int pCheckClassSum[3];
+	for(int i=0;i<NUM_CLASSES;++i)
+	{
+		pCheckClassSum[i] = 0;
+	}
+	int x1,x2,y;
+	for(int i=0; i<numPoints; ++i)
+	{
+		inputFile >> x1 >> x2 >> y;
+		pPoints[i].x = x1;
+		pPoints[i].y = x2;
+        pPoints[i].classification = y;
+		pCheckClassSum[y]++;
+        //std::cout <<"File Input:  x = "<<pPoints[i].x<<", y = "<<pPoints[i].y<<"  yclass = "<<pPoints[i].classification <<"\n";
+	}
+	for(int i=0;i<NUM_CLASSES;++i)
+	{
+		std::cout<<"pCheckClassSum["<<i<<"]="<<pCheckClassSum[i]<<"\n";
+	}
+	return true;
+}
 int main(void) {
-    int i;
-    // Allocate space for vectors of 
-    //  x Axis, y Axis 
     cl_int clStatus;
+
+    // Allocate space for vectors of 
     point *pPoints = (point*)malloc(sizeof(point)*NUM_OF_POINTS);
-    for (i = 0; i < NUM_OF_POINTS; i++)
-    {
-        pPoints[i].x = rand()%100;
-        pPoints[i].y = rand()%100;
-        pPoints[i].z = rand()%100;
-    }
+    readKNNData(pPoints, NUM_OF_POINTS);
+
     printf("Host sizeof (point) = %d\n", sizeof(point) );
     // Get platform and device information
     cl_platform_id * platforms = NULL;
@@ -124,7 +165,7 @@ int main(void) {
     //Get the devices list and choose the type of device you want to run on
     cl_device_id     *device_list = NULL;
     OCL_CREATE_DEVICE( platforms[0], CL_DEVICE_TYPE_GPU, device_list);
-
+    
     // Create one OpenCL context for each device in the platform
     cl_context context;
     cl_context_properties props[3] =
@@ -136,13 +177,14 @@ int main(void) {
 
     context = clCreateContext( NULL, num_devices, device_list, NULL, NULL, &clStatus);
 
-    // Create a command queue
+    // Create a command queue for the selected device
     cl_command_queue command_queue = clCreateCommandQueue(context, device_list[0], 0, &clStatus);
+
     // Execute the OpenCL kernel on the list
-    size_t global_size = NUM_OF_POINTS;             // Process all the points today
-    size_t local_size  = WORK_GROUP_SIZE;           // Process one item at a time
-    size_t num_of_work_groups = global_size/local_size; //TODO 
-    int    points = NUM_OF_POINTS;
+    size_t global_size = NUM_OF_POINTS;             // Process all points. Each work item shall process a point
+    size_t local_size  = WORK_GROUP_SIZE;           // This is the size of teh work group.
+    size_t num_of_work_groups = global_size/local_size; // Calculate the Number of work groups.
+
     //Allocate memory for storing the sumations
     float *pDistance = (float*)malloc(sizeof(float)*NUM_OF_POINTS);
 
@@ -198,11 +240,11 @@ int main(void) {
         for(passOfStage = 0; passOfStage < stage + 1; ++passOfStage) {
             // pass of the current stage
             clStatus = clSetKernelArg(bitonic_sort_kernel, 3, sizeof(int), (void *)&passOfStage);
-            /*
-             * Enqueue a kernel run call.
-             * Each thread writes a sorted pair.
-             * So, the number of  threads (global) should be half the length of the input buffer.
-             */
+            //
+            // Enqueue a kernel run call.
+            // Each thread writes a sorted pair.
+            // So, the number of  threads (global) should be half the length of the input buffer.
+            //
             clStatus = clEnqueueNDRangeKernel(command_queue, bitonic_sort_kernel, 1, NULL,
                                               &global_size, &local_size, 0, NULL, NULL);
             LOG_OCL_ERROR(clStatus, "enqueueNDRangeKernel() failed for sort() kernel." );
@@ -212,9 +254,9 @@ int main(void) {
     
     float *mapped_distance = (float *)clEnqueueMapBuffer(command_queue, pDistance_clmem, true, CL_MAP_READ, 0, sizeof(float) * NUM_OF_POINTS, 0, NULL, NULL, &clStatus);
     point *mapped_points   = (point *)clEnqueueMapBuffer(command_queue, pPoints_clmem, true, CL_MAP_WRITE, 0, sizeof(point) * NUM_OF_POINTS, 0, NULL, NULL, &clStatus);
-    // Display the result to the screen
-    //for(i = 0; i < NUM_OF_POINTS; i++)
-    //    printf( "point(%d, %d, %d) = %3.8f \n", mapped_points[i].x,mapped_points[i].y,mapped_points[i].z,mapped_distance[i] );
+    // Display the Sorted K points on the screen
+    for(int i = 0; i < K_CLASSIFICATION_POINTS; i++)
+        printf( "point(%d, %d, %d) = %3.8f \n", mapped_points[i].x,mapped_points[i].y,mapped_points[i].classification, mapped_distance[i] );
 
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(distance_kernel);
@@ -224,10 +266,12 @@ int main(void) {
     clStatus = clReleaseMemObject(pDistance_clmem);
     clStatus = clReleaseCommandQueue(command_queue);
     clStatus = clReleaseContext(context);
-    /*Free all Memory Allocations*/
+    
+    // Free all Memory Allocations
     free(pPoints);
     free(pDistance);
-    /*Release Platforms and Devices*/
+
+    // Release Platforms and Devices
     OCL_RELEASE_PLATFORMS( platforms );
     OCL_RELEASE_DEVICES( device_list );
 
