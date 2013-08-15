@@ -1,5 +1,5 @@
-add_executable( create_binary create_binary.cpp )
-target_link_libraries( create_binary ${OPENCL_LIBRARIES} )
-add_executable( built_in_kernels built_in_kernels.cpp )
-target_link_libraries( built_in_kernels ${OPENCL_LIBRARIES} )
+add_executable( getSupportedImageFormats getSupportedImageFormats.cpp )
+target_link_libraries( getSupportedImageFormats ${OPENCL_LIBRARIES} )
 
+add_executable( histogram_image histogram_image.cpp bmp_image.cpp )
+target_link_libraries( histogram_image ${OPENCL_LIBRARIES} )

@@ -182,11 +182,8 @@ int main(void) {
 
     // Execute the OpenCL kernel on the list
     size_t global_size = NUM_OF_POINTS;             // Process all points. Each work item shall process a point
-    size_t local_size  = WORK_GROUP_SIZE;           // This is the size of teh work group.
+    size_t local_size  = WORK_GROUP_SIZE;           // This is the size of the work group.
     size_t num_of_work_groups = global_size/local_size; // Calculate the Number of work groups.
-
-    //Allocate memory for storing the sumations
-    float *pDistance = (float*)malloc(sizeof(float)*NUM_OF_POINTS);
 
     //Create memory buffers on the device for each vector
     cl_mem pPoints_clmem = clCreateBuffer(context, CL_MEM_READ_WRITE|CL_MEM_USE_HOST_PTR,
@@ -269,7 +266,6 @@ int main(void) {
     
     // Free all Memory Allocations
     free(pPoints);
-    free(pDistance);
 
     // Release Platforms and Devices
     OCL_RELEASE_PLATFORMS( platforms );
