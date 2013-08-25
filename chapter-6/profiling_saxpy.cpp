@@ -13,6 +13,26 @@
 
 #define VECTOR_SIZE 1024
 
+double get_event_exec_time(cl_event event)
+{
+    cl_ulong start_time, end_time;
+    /*Get start device counter for the event*/
+    clGetEventProfilingInfo (event,
+                    CL_PROFILING_COMMAND_START,
+                    sizeof(cl_ulong),
+                    &start_time,
+                    NULL);
+    /*Get end device counter for the event*/
+    clGetEventProfilingInfo (event,
+                    CL_PROFILING_COMMAND_END,
+                    sizeof(cl_ulong),
+                    &end_time,
+                    NULL);
+    /*Convert the counter values to milli seconds*/
+    double total_time = (end_time - start_time) * 1e-6;
+    return total_time;
+}
+
 //OpenCL kernel which is run for every work item created.
 const char *saxpy_kernel =
 "__kernel                                   \n"
@@ -69,7 +89,7 @@ int main(void) {
     context = clCreateContext( NULL, num_devices, device_list, NULL, NULL, &clStatus);
 
     // Create a command queue
-    cl_command_queue command_queue = clCreateCommandQueue(context, device_list[0], 0, &clStatus);
+    cl_command_queue command_queue = clCreateCommandQueue(context, device_list[0], CL_QUEUE_PROFILING_ENABLE, &clStatus);
 
     // Create memory buffers on the device for each vector
     cl_mem A_clmem = clCreateBuffer(context, CL_MEM_READ_ONLY,
@@ -80,10 +100,11 @@ int main(void) {
             VECTOR_SIZE * sizeof(float), NULL, &clStatus);
 
     // Copy the Buffer A and B to the device
+    cl_event write_event[2];
     clStatus = clEnqueueWriteBuffer(command_queue, A_clmem, CL_TRUE, 0,
-            VECTOR_SIZE * sizeof(float), A, 0, NULL, NULL);
+            VECTOR_SIZE * sizeof(float), A, 0, NULL, &write_event[0]);
     clStatus = clEnqueueWriteBuffer(command_queue, B_clmem, CL_TRUE, 0,
-            VECTOR_SIZE * sizeof(float), B, 0, NULL, NULL);
+            VECTOR_SIZE * sizeof(float), B, 0, NULL, &write_event[1]);
 
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1,
@@ -104,20 +125,34 @@ int main(void) {
     // Execute the OpenCL kernel on the list
     size_t global_size = VECTOR_SIZE; // Process the entire lists
     size_t local_size = 64;           // Process one item at a time
+    
+    cl_event kernel_event;
     clStatus = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
-            &global_size, &local_size, 0, NULL, NULL);
+            &global_size, &local_size, 2, write_event, &kernel_event);
 
     // Read the memory buffer C_clmem on the device to the local variable C
+    cl_event read_event;
     clStatus = clEnqueueReadBuffer(command_queue, C_clmem, CL_TRUE, 0,
-            VECTOR_SIZE * sizeof(float), C, 0, NULL, NULL);
+            VECTOR_SIZE * sizeof(float), C, 1, &kernel_event, &read_event);
+
+    /*Get all the event statistics and display the timings*/
+    double exec_time;
+    exec_time = get_event_exec_time(write_event[0]);
+    printf("Time taken to transfer Matrix A = %lf ms\n",exec_time);
+    exec_time = get_event_exec_time(write_event[1]);
+    printf("Time taken to transfer Matrix B = %lf ms\n",exec_time);
+    exec_time = get_event_exec_time(kernel_event);
+    printf("Time taken to execute the SAXPY kernel = %lf ms\n",exec_time);
+    exec_time = get_event_exec_time(read_event);
+    printf("Time taken to read the result Matrix C = %lf ms\n",exec_time);
 
     // Clean up and wait for all the comands to complete.
     clStatus = clFlush(command_queue);
     clStatus = clFinish(command_queue);
 
     // Display the result to the screen
-    for(i = 0; i < VECTOR_SIZE; i++)
-        printf("%f * %f + %f = %f\n", alpha, A[i], B[i], C[i]);
+    //for(i = 0; i < VECTOR_SIZE; i++)
+    //    printf("%f * %f + %f = %f\n", alpha, A[i], B[i], C[i]);
 
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(kernel);
