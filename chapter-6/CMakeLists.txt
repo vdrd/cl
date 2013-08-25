@@ -1,2 +1,2 @@
-add_executable( sizeof sizeof.cpp ) 
-target_link_libraries( sizeof ${OPENCL_LIBRARIES} )  
+add_executable( profiling_saxpy profiling_saxpy.cpp )
+target_link_libraries( profiling_saxpy ${OPENCL_LIBRARIES} )
