@@ -1,6 +1,6 @@
 #pragma	once
-#include "gaussian.h"
-#include "gaussian_kernel.h"
+#include "sobel.h"
+#include "sobel_kernel.h"
 #include <math.h>
 
 using std::cout;
@@ -12,7 +12,7 @@ ImageFilter::ImageFilter(string &_filename)
 {
 
 	cout <<   "\n/*********************************************/ " << "\n";
-	cout <<	    "     Image Filter Base class                  "   << "\n";
+	cout <<	    "     Image Filter - Sobel Filter                "   << "\n";
 	cout <<	    "/*********************************************/ " << "\n\n";
     host_image = NULL;
     filename = _filename;
@@ -22,10 +22,14 @@ ImageFilter::ImageFilter(string &_filename)
 
 void ImageFilter::setup_filter( )
 {
-    float lFilter[WINDOW_SIZE*WINDOW_SIZE] = {  1.f/16,  2.f/16,  1.f/16,
-                                                2.f/16,  4.f/16,  2.f/16,
-                                                1.f/16,  2.f/16,  1.f/16  };
-    memcpy(filter, lFilter, WINDOW_SIZE*WINDOW_SIZE*sizeof(float));
+    float lFilter_x_gradient[WINDOW_SIZE*WINDOW_SIZE] = {  -1.0f,   0.0f,    1.0f,
+                                                           -2.0f,   0.0f,    2.0f,
+                                                           -1.0f,   0.0f,    1.0f  };
+    float lFilter_y_gradient[WINDOW_SIZE*WINDOW_SIZE] = {  -1.0f,  -2.0f,   -1.0f,
+                                                            0.0f,   0.0f,    0.0f,
+                                                            1.f,    2.f,     1.f  };
+    memcpy(filter, lFilter_x_gradient, WINDOW_SIZE*WINDOW_SIZE*sizeof(float));
+    memcpy(filter, lFilter_y_gradient, WINDOW_SIZE*WINDOW_SIZE*sizeof(float));
 }
 
 void ImageFilter::load_bmp_image( )
@@ -66,15 +70,12 @@ void ImageFilter::print_GPU_Timer()
 	printf("GPU execution time is.......... %lf (ms)\n", 1000*timer_GPU.GetElapsedTime());
 }
 
-
-
 void ImageFilter::cleanup()
 {
 	free(host_image);
     ReleaseBMPImage(&image);
 	cout << "Cleaned up!\n";
 }
-
 
 void ImageFilter::init_GPU_OpenCL( )
 {
@@ -131,7 +132,7 @@ cl_int ImageFilter::setupOCLProgram()
 {
     cl_int status;
     program = clCreateProgramWithSource(context, 1,
-                (const char **)&gaussian_kernel, NULL, &status);
+                (const char **)&sobel_kernel, NULL, &status);
     LOG_OCL_ERROR(status, "clCreateProgramWithSource Failed" );
 
     // Build the program
@@ -151,7 +152,7 @@ cl_int ImageFilter::setupOCLkernels()
 {
     cl_int status;
     // Create the OpenCL kernel
-    gd_kernel = clCreateKernel(program, "gaussian_filter_kernel", &status);
+    kernel = clCreateKernel(program, "sobel_filter_kernel", &status);
     LOG_OCL_ERROR(status, "clCreateKernel Failed" );
 
     return status;
@@ -178,7 +179,7 @@ cl_int ImageFilter::setupOCLbuffers()
 	image_desc.num_mip_levels = 0;
 	image_desc.num_samples = 0;
 	image_desc.buffer= NULL;
-    ocl_input_image = clCreateImage(
+    ocl_raw = clCreateImage(
         context,
         CL_MEM_READ_ONLY,
         &image_format,
@@ -201,7 +202,7 @@ cl_int ImageFilter::setupOCLbuffers()
         &status);
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
 
-    ocl_filter = clCreateBuffer(
+    ocl_filter_x_gradient = clCreateBuffer(
         context,
         CL_MEM_READ_WRITE|CL_MEM_USE_HOST_PTR,
         WINDOW_SIZE*WINDOW_SIZE*sizeof(float),
@@ -209,6 +210,13 @@ cl_int ImageFilter::setupOCLbuffers()
         &status);
     LOG_OCL_ERROR(status, "clCreateBuffer Failed" );
 
+    ocl_filter_y_gradient = clCreateBuffer(
+        context,
+        CL_MEM_READ_WRITE|CL_MEM_USE_HOST_PTR,
+        WINDOW_SIZE*WINDOW_SIZE*sizeof(float),
+		filter,
+        &status);
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed" );
 	//Create OpenCL device output buffer
     return status;
 }
@@ -226,13 +234,14 @@ void ImageFilter::run_gaussian_filter_kernel()
     cl_int status;
 
     int windowSize = WINDOW_SIZE;
-    status = clSetKernelArg(gd_kernel, 0, sizeof(cl_mem), (void*)&ocl_raw);
-    status = clSetKernelArg(gd_kernel, 1, sizeof(cl_mem), (void*)&ocl_filtered_image);
-    status = clSetKernelArg(gd_kernel, 2, sizeof(cl_mem), (void*)&ocl_filter);
-    status = clSetKernelArg(gd_kernel, 3, sizeof(int), (void*)&windowSize);
+    status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&ocl_raw);
+    status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&ocl_filtered_image);
+    status = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&ocl_filter_x_gradient);
+    status = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&ocl_filter_y_gradient);
+    status = clSetKernelArg(kernel, 4, sizeof(int), (void*)&windowSize);
     status = clEnqueueNDRangeKernel(
                         commandQueue,
-                        gd_kernel,
+                        kernel,
                         2,
                         NULL,
                         gwsize,
@@ -242,7 +251,39 @@ void ImageFilter::run_gaussian_filter_kernel()
                         &wlist[0]);
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel Failed" );
     clWaitForEvents(1, &wlist[0]);
-
 }
+
+int main(int argc, char* argv[])
+{
+    ImageFilter*	img_filter;
+	img_filter = new ImageFilter(string(argv[1]));
+	unsigned int num_of_frames = 0;
+    try
+    {
+	    img_filter->init_GPU_OpenCL();
+	    img_filter->start_GPU_Timer();
+	    img_filter->run_GPU();
+	    img_filter->stop_GPU_Timer();
+	    img_filter->print_GPU_Timer();
+	    img_filter-> write_bmp_image( );
+	    delete(img_filter);
+    }
+#ifdef __CL_ENABLE_EXCEPTIONS
+	catch(cl::Error err)
+	{
+		std::cout << "Error: " << err.what() << "(" << err.err() << ")" << std::endl;
+		cout << "Please check CL/cl.h for error code" << std::endl;
+		delete(img_filter);
+	}
+#endif
+	catch(string msg)
+	{
+		std::cout << "Exception caught: " << msg << std::endl;
+		delete(img_filter);
+	}
+
+	return 0;
+}
+
 
 

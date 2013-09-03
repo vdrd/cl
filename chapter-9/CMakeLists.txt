@@ -1,0 +1,12 @@
+include_directories( "C:/Users/rbanger/Documents/AMD APP/samples/opencl/SDKUtil/include" )
+set( gaussian.Source ../common/bmp_image.cpp gaussian.cpp ../common/Timer.cpp)
+set( gaussian.Headers ../include/bmp_image.h gaussian.h ../include/Timer.h )
+set( gaussian.Files ${gaussian.Source} ${gaussian.Headers} )
+add_executable( gaussian  ${gaussian.Files} )
+target_link_libraries( gaussian ${OPENCL_LIBRARIES} )
+
+set( sobel.Source ../common/bmp_image.cpp sobel.cpp ../common/Timer.cpp)
+set( sobel.Headers ../include/bmp_image.h sobel.h ../include/Timer.h )
+set( sobel.Files ${sobel.Source} ${sobel.Headers} )
+add_executable( sobel  ${sobel.Files} )
+target_link_libraries( sobel ${OPENCL_LIBRARIES} )
