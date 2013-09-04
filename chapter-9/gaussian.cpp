@@ -35,7 +35,7 @@ void ImageFilter::load_bmp_image( )
 
 void ImageFilter::write_bmp_image( )
 {
-    std::string filteredFileName("filtered.bmp") ;
+    std::string filteredFileName("gaussian_filtered.bmp") ;
     WriteBMPGrayscaleImageFloat(filteredFileName, &image, GPU_output);
 }
 

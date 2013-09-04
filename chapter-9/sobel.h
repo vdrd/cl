@@ -1,6 +1,6 @@
 #pragma once
-#ifndef OCL_GAUSSIAN_H
-#define OCL_GAUSSIAN_H
+#ifndef OCL_SOBEL_H
+#define OCL_SOBEL_H
 #include <CL/cl_gl.h>
 #include <CL/cl.hpp>
 #include "Timer.h"

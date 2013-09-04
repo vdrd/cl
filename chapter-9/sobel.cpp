@@ -39,7 +39,7 @@ void ImageFilter::load_bmp_image( )
 
 void ImageFilter::write_bmp_image( )
 {
-    std::string filteredFileName("filtered.bmp") ;
+    std::string filteredFileName("sobel_filtered.bmp") ;
     WriteBMPGrayscaleImageFloat(filteredFileName, &image, GPU_output);
 }
 
