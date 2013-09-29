@@ -1,2 +1,2 @@
-add_executable( sizeof sizeof.cpp ) 
-target_link_libraries( sizeof ${OPENCL_LIBRARIES} )  
+add_executable( chapter7.sizeof sizeof.cpp ) 
+target_link_libraries( chapter7.sizeof ${OPENCL_LIBRARIES} )  
