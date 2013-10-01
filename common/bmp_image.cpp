@@ -72,7 +72,7 @@ ReadBMPImage(std::string filename,  Image **image)
                     pixelColor[(y * infoHeader.width + x)] = colors_[tmpPixels[index++]];
                 }
                 else { // 24 bit
-					//pixelColor[(y * infoHeader.width + x)].w = 0;
+                    //pixelColor[(y * infoHeader.width + x)].w = 0;
                     pixelColor[(y * infoHeader.width + x)].z = tmpPixels[index++];
                     pixelColor[(y * infoHeader.width + x)].y = tmpPixels[index++];
                     pixelColor[(y * infoHeader.width + x)].x = tmpPixels[index++];
@@ -88,7 +88,7 @@ ReadBMPImage(std::string filename,  Image **image)
         // Loaded file so we can close the file.
         fclose(fd);
         free(tmpPixels);
-		if(infoHeader.bitsPerPixel == 8) {
+        if(infoHeader.bitsPerPixel == 8) {
             free(colors_);
         }
         (*image)->width = infoHeader.width;

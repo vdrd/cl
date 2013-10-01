@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 #include <ocl_macros.h>
 
 #define NUM_OF_POINTS 4096
@@ -98,67 +102,67 @@ const char *parabolic_regression_kernel =
 "}                                                                                                  \n";                                
 
 float determinant3By3(
-					  float a1,
-					  float b1,
-					  float c1,
-					  float a2,
-					  float b2,
-					  float c2,
-					  float a3,
-					  float b3,
-					  float c3
-					  )
+                      float a1,
+                      float b1,
+                      float c1,
+                      float a2,
+                      float b2,
+                      float c2,
+                      float a3,
+                      float b3,
+                      float c3
+                      )
 {
-	float det = a1*b2*c3 - a1*b3*c2;
-	det += a3*b1*c2 - a2*b1*c3;
-	det += a2*b3*c1 - a3*b2*c1;
-	return det;
+    float det = a1*b2*c3 - a1*b3*c2;
+    det += a3*b1*c2 - a2*b1*c3;
+    det += a2*b3*c1 - a3*b2*c1;
+    return det;
 }
 
 void findParabolla( 
-				   float* pA0, 
-				   float* pA1, 
-				   float* pA2,
-				   //Input parameters
-				   int    N, 
-				   float sumX, 
-				   float sumXX, 
-				   float sumXXX, 
-				   float sumXXXX, 
-				   float sumY, 
-				   float sumXY, 
-				   float sumXXY,
-				   bool* resultValid
-				   )
+                   float* pA0, 
+                   float* pA1, 
+                   float* pA2,
+                   //Input parameters
+                   int    N, 
+                   float sumX, 
+                   float sumXX, 
+                   float sumXXX, 
+                   float sumXXXX, 
+                   float sumY, 
+                   float sumXY, 
+                   float sumXXY,
+                   bool* resultValid
+                   )
 {
-	//compute detA
-	float detA = determinant3By3((float)N, sumX,   sumXX,
-		                          sumX,    sumXX,  sumXXX,
-								  sumXX,   sumXXX, sumXXXX);
+    //compute detA
+    float detA = determinant3By3((float)N, sumX,   sumXX,
+                                  sumX,    sumXX,  sumXXX,
+                                  sumXX,   sumXXX, sumXXXX);
 
 
-	if( 0.f == detA)
-	{
-		*resultValid = false;
-		return;
-	}
+    if( 0.f == detA)
+    {
+        *resultValid = false;
+        return;
+    }
 
-	float detA0 = determinant3By3(sumY, sumX,   sumXX,
-		                          sumXY,    sumXX,  sumXXX,
-								  sumXXY,   sumXXX, sumXXXX);
+    float detA0 = determinant3By3(sumY, sumX,   sumXX,
+                                  sumXY,    sumXX,  sumXXX,
+                                  sumXXY,   sumXXX, sumXXXX);
     std::cout <<"KOushik " << detA0;
-	float detA1 = determinant3By3((float)N, sumY,   sumXX,
-		                          sumX,    sumXY,  sumXXX,
-								  sumXX,   sumXXY, sumXXXX);
+    float detA1 = determinant3By3((float)N, sumY,   sumXX,
+                                  sumX,    sumXY,  sumXXX,
+                                  sumXX,   sumXXY, sumXXXX);
 
-	float detA2 = determinant3By3((float)N, sumX,   sumY,
-		                          sumX,    sumXX,  sumXY,
-								  sumXX,   sumXXX, sumXXY);
+    float detA2 = determinant3By3((float)N, sumX,   sumY,
+                                  sumX,    sumXX,  sumXY,
+                                  sumXX,   sumXXX, sumXXY);
 
 
-	*pA0 = detA0/detA;
-	*pA1 = detA1/detA;
-	*pA2 = detA2/detA;
+    *pA0 = detA0/detA;
+    *pA1 = detA1/detA;
+    *pA2 = detA2/detA;
 }
 
 
@@ -370,7 +374,7 @@ vSum = 0.0f;
     bool resultValid;
     findParabolla( &A0, &A1, &A2, NUM_OF_POINTS, 
                    sumX, sumXX, sumXXX, sumXXXX, sumY, sumXY, sumXXY,
-				   &resultValid );
+                   &resultValid );
     if(resultValid)
     {
         std::cout << "The values A0, A1 and A2 are :\n";

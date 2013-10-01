@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 #include <ocl_macros.h>
 
 #define DATA_TYPE int   //The kernel define should also be changed.

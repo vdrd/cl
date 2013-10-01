@@ -2,7 +2,11 @@
 #include <iostream>
 #include <string.h>
 #include <stdio.h>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 #include <ocl_macros.h>
 #include <bmp_image.h>
 #define USE_HOST_MEMORY
@@ -102,16 +106,16 @@ int main(int argc, char *argv[])
     deviceBinG    = (cl_uint*)malloc(binSize * sizeof(cl_uint));
     deviceBinB    = (cl_uint*)malloc(binSize * sizeof(cl_uint));
     
-	//Setup the OpenCL Platform, 
-	//Get the first available platform. Use it as the default platform
+    //Setup the OpenCL Platform, 
+    //Get the first available platform. Use it as the default platform
     status = clGetPlatformIDs(1, &platform, NULL);
     LOG_OCL_ERROR(status, "clGetPlatformIDs Failed." );
 
-	//Get the first available device 
+    //Get the first available device 
     status = clGetDeviceIDs (platform, dType, 1, &device, NULL);
     LOG_OCL_ERROR(status, "clGetDeviceIDs Failed." );
-	
-	//Create an execution context for the selected platform and device. 
+    
+    //Create an execution context for the selected platform and device. 
     cl_context_properties cps[3] = 
     {
         CL_CONTEXT_PLATFORM,
@@ -133,7 +137,7 @@ int main(int argc, char *argv[])
                                         &status);
     LOG_OCL_ERROR(status, "clCreateCommandQueue Failed." );
 #if !defined(USE_HOST_MEMORY)
-	//Create OpenCL device input buffer
+    //Create OpenCL device input buffer
     imageBuffer = clCreateBuffer(
         context,
         CL_MEM_READ_ONLY,
@@ -166,8 +170,8 @@ int main(int argc, char *argv[])
 #endif
     status = clFinish(commandQueue);
     LOG_OCL_ERROR(status, "clFinish Failed while writing the image data." );
-	
-	//Create OpenCL device output buffer
+    
+    //Create OpenCL device output buffer
     intermediateHistR = clCreateBuffer(
         context, 
         CL_MEM_WRITE_ONLY,

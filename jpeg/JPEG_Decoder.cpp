@@ -20,7 +20,7 @@ JPEG_Decoder::setupCL(void)
     cl_int status = 0;
     size_t deviceListSize;
 
-	//Get the first available platform. Use it as the default platform
+    //Get the first available platform. Use it as the default platform
     status = clGetPlatformIDs(1, &platform, NULL);
     LOG_OCL_ERROR(status, "clGetPlatformIDs Failed" );
     cl_device_type dType;

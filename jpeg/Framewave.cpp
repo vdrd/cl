@@ -6,156 +6,156 @@
 
 const Fw8u zigZagFwdOrder[80] =
 {
-	0,   1,  8, 16,  9,  2,  3, 10, 
-	17, 24, 32, 25, 18, 11,  4,  5,
-	12, 19, 26, 33, 40, 48, 41, 34, 
-	27, 20, 13,  6,  7, 14, 21, 28,
-	35, 42, 49, 56, 57, 50, 43, 36, 
-	29, 22, 15, 23, 30, 37, 44, 51,
-	58, 59, 52, 45, 38, 31, 39, 46, 
-	53, 60, 61, 54, 47, 55, 62, 63,
-	63, 63, 63, 63, 63, 63, 63, 63,
-	63, 63, 63, 63, 63, 63, 63, 63
+    0,   1,  8, 16,  9,  2,  3, 10, 
+    17, 24, 32, 25, 18, 11,  4,  5,
+    12, 19, 26, 33, 40, 48, 41, 34, 
+    27, 20, 13,  6,  7, 14, 21, 28,
+    35, 42, 49, 56, 57, 50, 43, 36, 
+    29, 22, 15, 23, 30, 37, 44, 51,
+    58, 59, 52, 45, 38, 31, 39, 46, 
+    53, 60, 61, 54, 47, 55, 62, 63,
+    63, 63, 63, 63, 63, 63, 63, 63,
+    63, 63, 63, 63, 63, 63, 63, 63
 };
 const Fw8u zigZagInvOrder[64] =
 {
-	 0,  1,  5,  6, 14, 15, 27, 28,
-	 2,  4,  7, 13, 16, 26, 29, 42,
-	 3,  8, 12, 17, 25, 30, 41, 43,
-	 9, 11, 18, 24, 31, 40, 44, 53,
-	10, 19, 23, 32, 39, 45, 52, 54,
-	20, 22, 33, 38, 46, 51, 55, 60,
-	21, 34, 37, 47, 50, 56, 59, 61,
-	35, 36, 48, 49, 57, 58, 62, 63
+     0,  1,  5,  6, 14, 15, 27, 28,
+     2,  4,  7, 13, 16, 26, 29, 42,
+     3,  8, 12, 17, 25, 30, 41, 43,
+     9, 11, 18, 24, 31, 40, 44, 53,
+    10, 19, 23, 32, 39, 45, 52, 54,
+    20, 22, 33, 38, 46, 51, 55, 60,
+    21, 34, 37, 47, 50, 56, 59, 61,
+    35, 36, 48, 49, 57, 58, 62, 63
 };
 
 bool dec_receivebits (FwiDecodeHuffmanState * pDecHuffState, Fw32u accbuf, 
-					  int accbitnum, int ssss)
+                      int accbitnum, int ssss)
 {
-	unsigned char  *pCurrSrc = pDecHuffState->pCurrSrc;
-	int         srcLenBytes = pDecHuffState->srcLenBytes;
-	int c;
+    unsigned char  *pCurrSrc = pDecHuffState->pCurrSrc;
+    int         srcLenBytes = pDecHuffState->srcLenBytes;
+    int c;
 
-	//Figure F.17 procedure for Receive (SSSS)
-	if (pDecHuffState->marker == 0) {
-		//read to full 32u bytes
-		while (accbitnum <= 24) {
-			if (srcLenBytes <= 0) break;
-			srcLenBytes--;
-			c =  *(pCurrSrc++);
+    //Figure F.17 procedure for Receive (SSSS)
+    if (pDecHuffState->marker == 0) {
+        //read to full 32u bytes
+        while (accbitnum <= 24) {
+            if (srcLenBytes <= 0) break;
+            srcLenBytes--;
+            c =  *(pCurrSrc++);
 
-			if (c == 0xFF) {
-				do {
-					srcLenBytes--;
-					c =  *(pCurrSrc++);
-				} while (c == 0xFF);
+            if (c == 0xFF) {
+                do {
+                    srcLenBytes--;
+                    c =  *(pCurrSrc++);
+                } while (c == 0xFF);
 
-				if (c == 0) {
-					c = 0xFF; 
-				} else {
-					pDecHuffState->marker = c;
-					//prevent data corruption
-    					if (ssss > accbitnum) {
-						accbuf <<= 25 - accbitnum;
-						accbitnum = 25;
-					}
-					break;
-				}
-			}
+                if (c == 0) {
+                    c = 0xFF; 
+                } else {
+                    pDecHuffState->marker = c;
+                    //prevent data corruption
+                        if (ssss > accbitnum) {
+                        accbuf <<= 25 - accbitnum;
+                        accbitnum = 25;
+                    }
+                    break;
+                }
+            }
 
-			accbuf = (accbuf << 8) | c;
-			accbitnum += 8;
-		}
-	} else {
-		//prevent data corruption
-		if (ssss > accbitnum) {
-			accbuf <<= 25 - accbitnum;
-			accbitnum = 25;
-		}  
-	}
+            accbuf = (accbuf << 8) | c;
+            accbitnum += 8;
+        }
+    } else {
+        //prevent data corruption
+        if (ssss > accbitnum) {
+            accbuf <<= 25 - accbitnum;
+            accbitnum = 25;
+        }  
+    }
 
-	pDecHuffState->pCurrSrc    = pCurrSrc;
-	pDecHuffState->srcLenBytes = srcLenBytes;
-	pDecHuffState->accbuf      = accbuf;
-	pDecHuffState->accbitnum   = accbitnum;
+    pDecHuffState->pCurrSrc    = pCurrSrc;
+    pDecHuffState->srcLenBytes = srcLenBytes;
+    pDecHuffState->accbuf      = accbuf;
+    pDecHuffState->accbitnum   = accbitnum;
 
-	return true;
+    return true;
 }
 
 int dec_huff (FwiDecodeHuffmanState * pDecHuffState, Fw32u accbuf, 
-			  int accbitnum, const FwiDecodeHuffmanSpec *pTable, int nbits)
+              int accbitnum, const FwiDecodeHuffmanSpec *pTable, int nbits)
 {
-	Fw16s code;
+    Fw16s code;
 
-	if (accbitnum < nbits) { 
-		if (! dec_receivebits(pDecHuffState,accbuf,accbitnum,nbits)) 
-			return -1; 
-		accbitnum = pDecHuffState->accbitnum;
-		accbuf	  = pDecHuffState->accbuf;
-	}
+    if (accbitnum < nbits) { 
+        if (! dec_receivebits(pDecHuffState,accbuf,accbitnum,nbits)) 
+            return -1; 
+        accbitnum = pDecHuffState->accbitnum;
+        accbuf	  = pDecHuffState->accbuf;
+    }
 
-	accbitnum -= nbits;
-	code = (Fw16s)((accbuf >> accbitnum) & ((1<<nbits)-1));
+    accbitnum -= nbits;
+    code = (Fw16s)((accbuf >> accbitnum) & ((1<<nbits)-1));
 
-	//Following JPEG standard Figure F.16
-	while (code > pTable->maxcode[nbits]) {
-		code <<= 1;
+    //Following JPEG standard Figure F.16
+    while (code > pTable->maxcode[nbits]) {
+        code <<= 1;
 
-		if (accbitnum < 1) { 
-			if (! dec_receivebits(pDecHuffState,accbuf,accbitnum,1)) 
-				return -1; 
-			accbitnum = pDecHuffState->accbitnum;
-			accbuf	  = pDecHuffState->accbuf;
-		}
+        if (accbitnum < 1) { 
+            if (! dec_receivebits(pDecHuffState,accbuf,accbitnum,1)) 
+                return -1; 
+            accbitnum = pDecHuffState->accbitnum;
+            accbuf	  = pDecHuffState->accbuf;
+        }
 
-		accbitnum--;
-		code |= ((accbuf >> accbitnum) & 1);
-		nbits++;
-	}
+        accbitnum--;
+        code |= ((accbuf >> accbitnum) & 1);
+        nbits++;
+    }
 
-	pDecHuffState->accbitnum = accbitnum;
+    pDecHuffState->accbitnum = accbitnum;
 
-	//To prevent corruption
-	if (nbits > 16) return 0;	
+    //To prevent corruption
+    if (nbits > 16) return 0;	
 
-	return pTable->pListVals[(code-pTable->mincode[nbits]+pTable->valptr[nbits])];
+    return pTable->pListVals[(code-pTable->mincode[nbits]+pTable->valptr[nbits])];
 }
 
 
 bool FW_HUFF_DECODE(int *result, FwiDecodeHuffmanState *pDecHuffState, 
-					 const FwiDecodeHuffmanSpec *pTable)
+                     const FwiDecodeHuffmanSpec *pTable)
 {	
-	int nextbit, look; 
+    int nextbit, look; 
 
-	//Figure F.18 Procedure for fetching the next bit of compressed data
-	if (pDecHuffState->accbitnum < 8) { 
-		//get more bytes in
-		if (! dec_receivebits(pDecHuffState,pDecHuffState->accbuf,pDecHuffState->accbitnum, 0)) {
-			return false;
-		} 
-		if (pDecHuffState->accbitnum < 8) {
-			nextbit = 1; 
-			*result = dec_huff(pDecHuffState,pDecHuffState->accbuf,pDecHuffState->accbitnum,
-				pTable,nextbit);
-			if (*result < 0) return false;
-			return true;
-		} 
-	} 
+    //Figure F.18 Procedure for fetching the next bit of compressed data
+    if (pDecHuffState->accbitnum < 8) { 
+        //get more bytes in
+        if (! dec_receivebits(pDecHuffState,pDecHuffState->accbuf,pDecHuffState->accbitnum, 0)) {
+            return false;
+        } 
+        if (pDecHuffState->accbitnum < 8) {
+            nextbit = 1; 
+            *result = dec_huff(pDecHuffState,pDecHuffState->accbuf,pDecHuffState->accbitnum,
+                pTable,nextbit);
+            if (*result < 0) return false;
+            return true;
+        } 
+    } 
 
-	look = (pDecHuffState->accbuf >> (pDecHuffState->accbitnum - 8)) & 0xff; 
-	nextbit = pTable->symcode[look];
+    look = (pDecHuffState->accbuf >> (pDecHuffState->accbitnum - 8)) & 0xff; 
+    nextbit = pTable->symcode[look];
 
-	if (nextbit != 0) { 
-		pDecHuffState->accbitnum -= nextbit; 
-		*result = pTable->symlen[look]; 
-	} else { 
-		nextbit = 9; 
-		*result = dec_huff(pDecHuffState,pDecHuffState->accbuf, pDecHuffState->accbitnum,
-			pTable,	nextbit);
-		if (*result < 0) return false; 
-	}
+    if (nextbit != 0) { 
+        pDecHuffState->accbitnum -= nextbit; 
+        *result = pTable->symlen[look]; 
+    } else { 
+        nextbit = 9; 
+        *result = dec_huff(pDecHuffState,pDecHuffState->accbuf, pDecHuffState->accbitnum,
+            pTable,	nextbit);
+        if (*result < 0) return false; 
+    }
 
-	return true;
+    return true;
 }
 
 //-----------------------------------------------------------------------
@@ -164,12 +164,12 @@ bool FW_HUFF_DECODE(int *result, FwiDecodeHuffmanState *pDecHuffState,
 //-----------------------------------------------------------------------
 FwStatus fwiDecodeHuffmanStateGetBufSize_JPEG_8u(int* size)
 {
-	if (size==0) return fwStsNullPtrErr;
+    if (size==0) return fwStsNullPtrErr;
 
-	//add alignment requirement
-	*size = sizeof(FwiDecodeHuffmanState) + 128;
+    //add alignment requirement
+    *size = sizeof(FwiDecodeHuffmanState) + 128;
 
-	return fwStsNoErr;
+    return fwStsNoErr;
 }
 
 //-----------------------------------------------------------------------
@@ -177,17 +177,17 @@ FwStatus fwiDecodeHuffmanStateGetBufSize_JPEG_8u(int* size)
 //-----------------------------------------------------------------------
 FwStatus fwiDecodeHuffmanStateInit_JPEG_8u(FwiDecodeHuffmanState *pDecHuffState)
 {
-	if (pDecHuffState==0) return fwStsNullPtrErr;
+    if (pDecHuffState==0) return fwStsNullPtrErr;
 
-	pDecHuffState->accbitnum = 0;
-	pDecHuffState->srcLenBytes = 0;
-	pDecHuffState->accbuf = 0;
-	pDecHuffState->pCurrSrc = (unsigned char *)((unsigned char *)pDecHuffState + 
-		sizeof (DecodeHuffmanState)) ;
-	pDecHuffState->marker = 0;
-	pDecHuffState->EOBRUN=0;
+    pDecHuffState->accbitnum = 0;
+    pDecHuffState->srcLenBytes = 0;
+    pDecHuffState->accbuf = 0;
+    pDecHuffState->pCurrSrc = (unsigned char *)((unsigned char *)pDecHuffState + 
+        sizeof (DecodeHuffmanState)) ;
+    pDecHuffState->marker = 0;
+    pDecHuffState->EOBRUN=0;
 
-	return fwStsNoErr;
+    return fwStsNoErr;
 }
 
 
@@ -195,104 +195,104 @@ FwStatus fwiDecodeHuffmanStateInit_JPEG_8u(FwiDecodeHuffmanState *pDecHuffState)
 //This function allocates memory and initialize FwiDecodeHuffmanState structure
 //-----------------------------------------------------------------------
 FwStatus fwiDecodeHuffmanStateInitAlloc_JPEG_8u(
-	FwiDecodeHuffmanState** pDecHuffState)
+    FwiDecodeHuffmanState** pDecHuffState)
 {
-	if (pDecHuffState==0) return fwStsNullPtrErr;
+    if (pDecHuffState==0) return fwStsNullPtrErr;
 
-	int size;
+    int size;
 
-	fwiDecodeHuffmanStateGetBufSize_JPEG_8u(&size);
-	*pDecHuffState = (FwiDecodeHuffmanState *) fwMalloc (size);
+    fwiDecodeHuffmanStateGetBufSize_JPEG_8u(&size);
+    *pDecHuffState = (FwiDecodeHuffmanState *) fwMalloc (size);
 
-	return fwiDecodeHuffmanStateInit_JPEG_8u(*pDecHuffState);
+    return fwiDecodeHuffmanStateInit_JPEG_8u(*pDecHuffState);
 }
 
 //-----------------------------------------------------------------------
 //This function creates Huffman table for decoder.
 //-----------------------------------------------------------------------
 FwStatus fwiDecodeHuffmanSpecInit_JPEG_8u(
-	const Fw8u *pListBits, const Fw8u *pListVals, FwiDecodeHuffmanSpec *pDecHuffSpec)
+    const Fw8u *pListBits, const Fw8u *pListVals, FwiDecodeHuffmanSpec *pDecHuffSpec)
 {
-	if (pListBits==0 || pListVals==0 || pDecHuffSpec==0)
-		return fwStsNullPtrErr;
+    if (pListBits==0 || pListVals==0 || pDecHuffSpec==0)
+        return fwStsNullPtrErr;
 
-	Fw16u huffsize[257], huffcode[257], code;
-	int i, j, k, si;
-	Fw16s bits; 
+    Fw16u huffsize[257], huffcode[257], code;
+    int i, j, k, si;
+    Fw16s bits; 
 
-	//Figure C.1 from CCITT Rec. T.81(1992 E) page 51
-	//generation of table of Huffman code Sizes
-	k=0;
-	for (i=1; i<=16; i++) {
-		bits = pListBits[i-1];
-		//Protection for next for loop
-		if (bits+k > 256) return fwStsJPEGHuffTableErr;
+    //Figure C.1 from CCITT Rec. T.81(1992 E) page 51
+    //generation of table of Huffman code Sizes
+    k=0;
+    for (i=1; i<=16; i++) {
+        bits = pListBits[i-1];
+        //Protection for next for loop
+        if (bits+k > 256) return fwStsJPEGHuffTableErr;
 
-		for (j=1; j<=bits; j++) {
-			huffsize[k]=(Fw16u)i;
-			k++;
-		}
-	}
+        for (j=1; j<=bits; j++) {
+            huffsize[k]=(Fw16u)i;
+            k++;
+        }
+    }
 
-	huffsize[k]=0;
+    huffsize[k]=0;
 
-	//Figure C.2 from CCITT Rec. T.81(1992 E) page 52
-	//generation of table of Huffman codes
-	code=0;
-	si=huffsize[0];
+    //Figure C.2 from CCITT Rec. T.81(1992 E) page 52
+    //generation of table of Huffman codes
+    code=0;
+    si=huffsize[0];
 
-	//huffsize[k]==0 means the last k to exit the loop
-	for (i=0; i<k;) {
-		while (huffsize[i]==si) {
-			huffcode[i++]=code++;
-		}
-		code <<=1;
-		si++;
-	}
+    //huffsize[k]==0 means the last k to exit the loop
+    for (i=0; i<k;) {
+        while (huffsize[i]==si) {
+            huffcode[i++]=code++;
+        }
+        code <<=1;
+        si++;
+    }
 
-	//Figure F.15 from CCITT Rec. T.81(1992 E) page 108
-	//ordering procedure for decoding procedure code tables
+    //Figure F.15 from CCITT Rec. T.81(1992 E) page 108
+    //ordering procedure for decoding procedure code tables
 
-	//set all codeless symbols to have code length 0
-	memset(pDecHuffSpec->symlen, 0, 512);
-	memset(pDecHuffSpec->symcode, 0, 512);
-	memset(pDecHuffSpec->maxcode, -1, 36);//Fw16s type
-	memset(pDecHuffSpec->mincode, 0, 36);//Fw16s type
-	memset(pDecHuffSpec->valptr,  0, 36);//Fw16s type
+    //set all codeless symbols to have code length 0
+    memset(pDecHuffSpec->symlen, 0, 512);
+    memset(pDecHuffSpec->symcode, 0, 512);
+    memset(pDecHuffSpec->maxcode, -1, 36);//Fw16s type
+    memset(pDecHuffSpec->mincode, 0, 36);//Fw16s type
+    memset(pDecHuffSpec->valptr,  0, 36);//Fw16s type
 
-	j=0;
-	for (i=1;i<=16;i++) {
-		bits = pListBits[i-1];
-		if (bits != 0) {
-			pDecHuffSpec->valptr[i] =(Fw16s)(j);
-			pDecHuffSpec->mincode[i] = huffcode[j];
-			j=j+bits-1;
-			pDecHuffSpec->maxcode[i] = huffcode[j];
-			j++;
-		}
-		//else maxcode to be -1
-		//else pDecHuffSpec->maxcode[i] = -1;
-	}
+    j=0;
+    for (i=1;i<=16;i++) {
+        bits = pListBits[i-1];
+        if (bits != 0) {
+            pDecHuffSpec->valptr[i] =(Fw16s)(j);
+            pDecHuffSpec->mincode[i] = huffcode[j];
+            j=j+bits-1;
+            pDecHuffSpec->maxcode[i] = huffcode[j];
+            j++;
+        }
+        //else maxcode to be -1
+        //else pDecHuffSpec->maxcode[i] = -1;
+    }
 
-	k=0;
-	for (j=1; j<=8; j++) {
-		for (i=1;i<= pListBits[j-1];i++) {
-			bits = (Fw16s)(huffcode[k] << (8-j));
-			for (si=0;si < (1<<(8-j));si++) {
-				pDecHuffSpec->symcode[bits]=(Fw16u)j;
-				pDecHuffSpec->symlen[bits] = pListVals[k];
-				bits++;
-			}
-			k++;
-		}
-	}
+    k=0;
+    for (j=1; j<=8; j++) {
+        for (i=1;i<= pListBits[j-1];i++) {
+            bits = (Fw16s)(huffcode[k] << (8-j));
+            for (si=0;si < (1<<(8-j));si++) {
+                pDecHuffSpec->symcode[bits]=(Fw16u)j;
+                pDecHuffSpec->symlen[bits] = pListVals[k];
+                bits++;
+            }
+            k++;
+        }
+    }
 
-	memcpy(pDecHuffSpec->pListVals, pListVals, 256);
+    memcpy(pDecHuffSpec->pListVals, pListVals, 256);
 
-	//Set 16s max_value to maxcode[17] to prevent data corruption
-	pDecHuffSpec->maxcode[17]= 0x7fff;
+    //Set 16s max_value to maxcode[17] to prevent data corruption
+    pDecHuffSpec->maxcode[17]= 0x7fff;
 
-	return fwStsNoErr;
+    return fwStsNoErr;
 }
 
 //-----------------------------------------------------------------------

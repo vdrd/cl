@@ -10,7 +10,7 @@ typedef struct
     unsigned char horizontalSamplingFactor;
     unsigned char verticalSamplingFactor;
     unsigned char DQTTableSelector;
-	int noOfMCUsForComponent;
+    int noOfMCUsForComponent;
     }SOF0ComponentData_t;
 #include "image.h"
 class SOF0

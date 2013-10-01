@@ -11,23 +11,23 @@ typedef unsigned int Fw32u;
 
 struct DecodeHuffmanSpec 
 { 
-	Fw8u  pListVals[256];				//Copy of pListVals from SpecInit
-	Fw16u symcode[256];            // symbol code
-	Fw16u symlen[256];             // symbol code length
+    Fw8u  pListVals[256];				//Copy of pListVals from SpecInit
+    Fw16u symcode[256];            // symbol code
+    Fw16u symlen[256];             // symbol code length
 
-	Fw16s mincode[18];             // smallest code value of specified length I
-	Fw16s maxcode[18];             // largest  code value of specified length I 
-	Fw16s valptr[18];              // index to the start of HUFFVAL decoded by code words of Length I 
+    Fw16s mincode[18];             // smallest code value of specified length I
+    Fw16s maxcode[18];             // largest  code value of specified length I 
+    Fw16s valptr[18];              // index to the start of HUFFVAL decoded by code words of Length I 
 };
 
 struct DecodeHuffmanState 
 {
-	Fw8u  *pCurrSrc;               //Current source pointer position
-	int srcLenBytes;                //Bytes left in the current source buffer
-	Fw32u accbuf;                  //accumulated buffer for extraction
-	int accbitnum;                  //bit number for accumulated buffer
-	int EOBRUN;                     //EOB run length
-	int marker;                     //JPEG marker
+    Fw8u  *pCurrSrc;               //Current source pointer position
+    int srcLenBytes;                //Bytes left in the current source buffer
+    Fw32u accbuf;                  //accumulated buffer for extraction
+    int accbitnum;                  //bit number for accumulated buffer
+    int EOBRUN;                     //EOB run length
+    int marker;                     //JPEG marker
 };
 
 typedef struct DecodeHuffmanSpec  FwiDecodeHuffmanSpec;
@@ -52,26 +52,26 @@ typedef struct
 #define DEC_EXTEND(V,T)  (V < (1<<(T-1)) ? (V + ((-1)<<T) + 1) : V)
 
 #define GET_ACCBITS(pDecHuffState, s) \
-	(((int) (pDecHuffState->accbuf >> (pDecHuffState->accbitnum -= (s)))) & ((1<<(s))-1))
+    (((int) (pDecHuffState->accbuf >> (pDecHuffState->accbitnum -= (s)))) & ((1<<(s))-1))
 #define STEPCHECK(X, Y) if (X<=0 || Y<=0) return fwStsStepErr
 #define ROISIZECHECK(X) if (X.height <=0 || X.width <=0) return fwStsSizeErr
 
 bool dec_receivebits (FwiDecodeHuffmanState * pDecHuffState, Fw32u accbuf, 
-					  int accbitnum, int ssss);
+                      int accbitnum, int ssss);
 
 int dec_huff (FwiDecodeHuffmanState * pDecHuffState, Fw32u accbuf, 
-			  int accbitnum, const FwiDecodeHuffmanSpec *pTable, int nbits);
+              int accbitnum, const FwiDecodeHuffmanSpec *pTable, int nbits);
 
 bool FW_HUFF_DECODE(int *result, FwiDecodeHuffmanState *pDecHuffState, 
-					 const FwiDecodeHuffmanSpec *pTable);
+                     const FwiDecodeHuffmanSpec *pTable);
 
 FwStatus fwiDecodeHuffmanStateGetBufSize_JPEG_8u(int* size);
 
 FwStatus fwiDecodeHuffmanStateInitAlloc_JPEG_8u(
-	FwiDecodeHuffmanState** pDecHuffState);
+    FwiDecodeHuffmanState** pDecHuffState);
 
 FwStatus fwiDecodeHuffmanSpecInit_JPEG_8u(
-	const Fw8u *pListBits, const Fw8u *pListVals, FwiDecodeHuffmanSpec *pDecHuffSpec);
+    const Fw8u *pListBits, const Fw8u *pListVals, FwiDecodeHuffmanSpec *pDecHuffSpec);
 
 FwStatus fwiDecodeHuffmanSpecInitAlloc_JPEG_8u(
     const Fw8u *pListBits, const Fw8u *pListVals, FwiDecodeHuffmanSpec** pDecHuffSpec);

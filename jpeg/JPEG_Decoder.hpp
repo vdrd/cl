@@ -3,7 +3,11 @@
 #define JPEG_DECODER_H_
 
 
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -56,19 +60,19 @@ class JPEG_Decoder /*: public SDKSample*/
     cl_platform_id       platform;      /**< CL platform  */
     cl_program            program;      /**< CL program  */
     cl_kernel        openclKernel;      /**< Open CL kernel */
-	cl_kernel     referenceKernel;      /**< Reference CL kernel */
-	cl_kernel       devicesKernel;  /*Kernel equivalent to the number of devices*/
-	cl_mem		 pMCUdstBuffer[4];
-	cl_mem quantInvTableBuffer[4]; //
-	cl_mem     openclOutputBuffer;
-	cl_mem	referenceOutputBuffer;
-	cl_mem	noOfDevicesOutputBuffer;
+    cl_kernel     referenceKernel;      /**< Reference CL kernel */
+    cl_kernel       devicesKernel;  /*Kernel equivalent to the number of devices*/
+    cl_mem		 pMCUdstBuffer[4];
+    cl_mem quantInvTableBuffer[4]; //
+    cl_mem     openclOutputBuffer;
+    cl_mem	referenceOutputBuffer;
+    cl_mem	noOfDevicesOutputBuffer;
     cl_int                      n;      /**< for command line args */
     cl_int                      m;
     cl_int                      k;
     cl_int                 timing;
     cl_double           totalTime;
-	
+    
 /**/size_t       maxWorkGroupSize;      /**< Device Specific Information */
 /**/cl_uint         maxDimensions;
 /**/size_t *     maxWorkItemSizes;
@@ -76,7 +80,7 @@ class JPEG_Decoder /*: public SDKSample*/
 /**/cl_ulong      usedLocalMemory; 
 /**/cl_ulong availableLocalMemory; 
     cl_ulong    neededLocalMemory;
-	image       Image;
+    image       Image;
 public:
     /** 
      * Constructor 
@@ -108,7 +112,7 @@ public:
             blockSize = 8;
             setupTime = 0;
             totalKernelTime = 0;
-			//timing = 1;
+            //timing = 1;
         }
 
     /**
@@ -133,12 +137,12 @@ public:
      */
     int runCLKernels();
 
-	/*runs the reference code*/
-	int runRefCLKernels();
+    /*runs the reference code*/
+    int runRefCLKernels();
 
     int genBinaryImage() { return 0;};
 
-	int runOnDevicesCLKernels();
+    int runOnDevicesCLKernels();
 
     /**
      * Override from SDKSample. Print sample stats.
@@ -163,11 +167,11 @@ public:
      */
     int run();
 
-	/*Run the reference Code*/
-	int runRef();
-	
-	/*Run based on the number of cores in the system*/
-	int runOnDevices();
+    /*Run the reference Code*/
+    int runRef();
+    
+    /*Run based on the number of cores in the system*/
+    int runOnDevices();
 
     /**
      * Override from SDKSample

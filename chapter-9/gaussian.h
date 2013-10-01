@@ -2,7 +2,13 @@
 #ifndef OCL_GAUSSIAN_H
 #define OCL_GAUSSIAN_H
 #include <CL/cl_gl.h>
-#include <CL/cl.hpp>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#include <OpenCL/cl_gl.h>
+#else
+#include <CL/cl.h>
+#include <CL/cl_gl.h>
+#endif
 #include "Timer.h"
 #include <string>
 #include <iostream>
@@ -13,7 +19,6 @@
 #include <ocl_macros.h>
 
 using std::string;
-using std::vector;
 
 #define		WINDOW_SIZE   3
 

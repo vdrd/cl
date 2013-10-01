@@ -2,7 +2,11 @@
 #include <iostream>
 #include <string.h>
 #include <stdio.h>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 #include <bmp_image.h>
 #include <ocl_macros.h>
 
@@ -118,18 +122,18 @@ int main(int argc, char *argv[])
     deviceBinG    = (cl_uint*)malloc(binSize * sizeof(cl_uint));
     deviceBinB    = (cl_uint*)malloc(binSize * sizeof(cl_uint));
     
-	//Setup the OpenCL Platform,
-	//Get the first available platform. Use it as the default platform
+    //Setup the OpenCL Platform,
+    //Get the first available platform. Use it as the default platform
     status = clGetPlatformIDs(1, &platform, NULL);
     if(status != CL_SUCCESS)
         std::cout << "Error # "<< status<<":: clGetPlatformIDs";
 
-	//Get the first available device
+    //Get the first available device
     status = clGetDeviceIDs (platform, dType, 1, &device, NULL);
     if(status != CL_SUCCESS)
         std::cout << "Error # "<< status<<":: clGetDeviceIDs";
-	
-	//Create an execution context for the selected platform and device.
+    
+    //Create an execution context for the selected platform and device.
     cl_context_properties contextProperty[3] = 
     {
         CL_CONTEXT_PLATFORM,
@@ -151,31 +155,31 @@ int main(int argc, char *argv[])
                                         &status);
     LOG_OCL_ERROR(status, "clCreateCommandQueue Failed" );
 
-	//Create OpenCL device input image
+    //Create OpenCL device input image
     
-	cl_image_format image_format;
-	image_format.image_channel_data_type = CL_UNSIGNED_INT8;
-	image_format.image_channel_order = CL_RGBA;
-	cl_image_desc image_desc;
-	image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
-	image_desc.image_width = image->width;
-	image_desc.image_height = image->height;
-	image_desc.image_depth = 1;
-	image_desc.image_array_size = 1;
-	image_desc.image_row_pitch = image->width * 4; //RGBA
-	image_desc.image_slice_pitch = image->width * image->height * 4;
-	image_desc.num_mip_levels = 0;
-	image_desc.num_samples = 0;
-	image_desc.buffer= NULL;
+    cl_image_format image_format;
+    image_format.image_channel_data_type = CL_UNSIGNED_INT8;
+    image_format.image_channel_order = CL_RGBA;
+    cl_image_desc image_desc;
+    image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+    image_desc.image_width = image->width;
+    image_desc.image_height = image->height;
+    image_desc.image_depth = 1;
+    image_desc.image_array_size = 1;
+    image_desc.image_row_pitch = image->width * 4; //RGBA
+    image_desc.image_slice_pitch = image->width * image->height * 4;
+    image_desc.num_mip_levels = 0;
+    image_desc.num_samples = 0;
+    image_desc.buffer= NULL;
     cl_mem clImage = clCreateImage(
         context,
         CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR,
         &image_format,
         &image_desc,
-		image->pixels, //R,G,B,A, R,G,B,A, R,G,B,A
+        image->pixels, //R,G,B,A, R,G,B,A, R,G,B,A
         &status); 
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
-	//Create OpenCL device output buffer
+    //Create OpenCL device output buffer
     intermediateHistR = clCreateBuffer(
         context, 
         CL_MEM_WRITE_ONLY,
@@ -228,8 +232,8 @@ int main(int argc, char *argv[])
     status = clSetKernelArg(kernel, 6, sizeof(cl_int), (void*)&blockHeight);
     // Execute the OpenCL kernel on the list
     cl_event ndrEvt;
-	size_t localThreads[2]  = {4,4};
-	size_t globalThreads[2] = {image->width/blockWidth, image->height/blockHeight};
+    size_t localThreads[2]  = {4,4};
+    size_t globalThreads[2] = {image->width/blockWidth, image->height/blockHeight};
     status = clEnqueueNDRangeKernel(
         commandQueue,
         kernel,

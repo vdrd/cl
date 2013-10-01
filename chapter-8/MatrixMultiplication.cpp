@@ -1,18 +1,13 @@
-//If you want to build the file directly at the command prompt then use the following commands.
-//AMD commands
-//cl /c Example1_SAXPY.cpp /I"%AMDAPPSDKROOT%\include"
-//link  /OUT:"Example.exe" "%AMDAPPSDKROOT%\lib\x86_64\OpenCL.lib" Example1_SAXPY.obj
-//nVIDIA commands
-//cl /c Example1_SAXPY.cpp /I"%NVSDKCOMPUTE_ROOT%\OpenCL\common\inc"
-//link  /OUT:"Example.exe" "%NVSDKCOMPUTE_ROOT%\OpenCL\common\lib\x64\OpenCL.lib" Example1_SAXPY.obj
-
-#include <windows.h>//Koushik
-
-#include <ocl_macros.h>
+#include <windows.h>
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
+#include <ocl_macros.h>
 //32 by 32 matrix
 //#define VECTOR_SIZE 1048576
 //#define VECTOR_SIZE 1024

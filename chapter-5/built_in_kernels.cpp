@@ -1,27 +1,24 @@
-//If you want to build the file directly at the command prompt then use the following commands. 
-//AMD commands
-//cl /c Example1_SAXPY.cpp /I"%AMDAPPSDKROOT%\include"
-//link  /OUT:"Example.exe" "%AMDAPPSDKROOT%\lib\x86_64\OpenCL.lib" Example1_SAXPY.obj
-//nVIDIA commands
-//cl /c Example1_SAXPY.cpp /I"%NVSDKCOMPUTE_ROOT%\OpenCL\common\inc"
-//link  /OUT:"Example.exe" "%NVSDKCOMPUTE_ROOT%\OpenCL\common\lib\x64\OpenCL.lib" Example1_SAXPY.obj
-
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
+
 
 #define VECTOR_SIZE 1024
 
 int main(void) {
     int i;
-	FILE *fp;
+    FILE *fp;
     float alpha = 2.0;
-	// Allocate space for vectors A, B and C
+    // Allocate space for vectors A, B and C
     float *A = (float*)malloc(sizeof(float)*VECTOR_SIZE);
     float *B = (float*)malloc(sizeof(float)*VECTOR_SIZE);
     float *C = (float*)malloc(sizeof(float)*VECTOR_SIZE);
-	
+    
     for(i = 0; i < VECTOR_SIZE; i++)
     {
         A[i] = (float)i;
@@ -50,11 +47,11 @@ int main(void) {
     // Create one OpenCL context for each device in the platform
     cl_context context;
     context = clCreateContext( NULL, num_devices, 
-		                       device_list, NULL, 
-							   NULL, &clStatus);
+                               device_list, NULL, 
+                               NULL, &clStatus);
     // Create a command queue
     cl_command_queue command_queue = clCreateCommandQueue(context, 
-		                                device_list[0], 0, &clStatus);
+                                        device_list[0], 0, &clStatus);
 
     // Create memory buffers on the device for each vector
     cl_mem A_clmem = clCreateBuffer(context, CL_MEM_READ_ONLY,
@@ -70,19 +67,19 @@ int main(void) {
     clStatus = clEnqueueWriteBuffer(command_queue, B_clmem, CL_TRUE, 0,
             VECTOR_SIZE * sizeof(float), B, 0, NULL, NULL);
 
-	//Open the file for reading
-	fopen_s(&fp, "saxpy_kernel_binary_gpu.clbin", "rb");
-	fseek(fp,0L,SEEK_END);
-	size_t fileSize = ftell(fp);
-	rewind(fp);
-	unsigned char * saxpy_kernel = new unsigned char [fileSize];
-	fread_s(saxpy_kernel,fileSize,1,fileSize,fp);
+    //Open the file for reading
+    fopen_s(&fp, "saxpy_kernel_binary_gpu.clbin", "rb");
+    fseek(fp,0L,SEEK_END);
+    size_t fileSize = ftell(fp);
+    rewind(fp);
+    unsigned char * saxpy_kernel = new unsigned char [fileSize];
+    fread_s(saxpy_kernel,fileSize,1,fileSize,fp);
     // Create a program from the kernel source
-	cl_int binary_status;
-	cl_program program = clCreateProgramWithBinary(context, 1, 
-		                 &device_list[0], &fileSize,
+    cl_int binary_status;
+    cl_program program = clCreateProgramWithBinary(context, 1, 
+                         &device_list[0], &fileSize,
                          (const unsigned char **)&saxpy_kernel, 
-						 &binary_status, &clStatus);
+                         &binary_status, &clStatus);
 
     // Build the program
     clStatus = clBuildProgram(program, 1, device_list, NULL, NULL, NULL);

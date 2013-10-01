@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
+
 #include <ocl_macros.h>
 #define NUM_OF_POINTS 1024
 

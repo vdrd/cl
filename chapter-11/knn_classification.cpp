@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 #include <ocl_macros.h>
 
 #define DATA_SIZE 1024
@@ -117,37 +121,37 @@ const char *knn_classification_kernel =
 
 bool readKNNData(point *pPoints, int numPoints)
 {
-	if( (NULL == pPoints) )
-	{
-		return false;
-	}
+    if( (NULL == pPoints) )
+    {
+        return false;
+    }
     // 
-	std::ifstream inputFile("kNNData.txt");
+    std::ifstream inputFile("kNNData.txt");
 
-	if(!inputFile.is_open())
-	{
-		return false;
-	}
-	int pCheckClassSum[3];
-	for(int i=0;i<NUM_CLASSES;++i)
-	{
-		pCheckClassSum[i] = 0;
-	}
-	int x1,x2,y;
-	for(int i=0; i<numPoints; ++i)
-	{
-		inputFile >> x1 >> x2 >> y;
-		pPoints[i].x = x1;
-		pPoints[i].y = x2;
+    if(!inputFile.is_open())
+    {
+        return false;
+    }
+    int pCheckClassSum[3];
+    for(int i=0;i<NUM_CLASSES;++i)
+    {
+        pCheckClassSum[i] = 0;
+    }
+    int x1,x2,y;
+    for(int i=0; i<numPoints; ++i)
+    {
+        inputFile >> x1 >> x2 >> y;
+        pPoints[i].x = x1;
+        pPoints[i].y = x2;
         pPoints[i].classification = y;
-		pCheckClassSum[y]++;
+        pCheckClassSum[y]++;
         //std::cout <<"File Input:  x = "<<pPoints[i].x<<", y = "<<pPoints[i].y<<"  yclass = "<<pPoints[i].classification <<"\n";
-	}
-	for(int i=0;i<NUM_CLASSES;++i)
-	{
-		std::cout<<"pCheckClassSum["<<i<<"]="<<pCheckClassSum[i]<<"\n";
-	}
-	return true;
+    }
+    for(int i=0;i<NUM_CLASSES;++i)
+    {
+        std::cout<<"pCheckClassSum["<<i<<"]="<<pCheckClassSum[i]<<"\n";
+    }
+    return true;
 }
 int main(void) {
     cl_int clStatus;
