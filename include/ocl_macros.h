@@ -1,7 +1,7 @@
 #if !defined OCL_MACROS_H
 #define OCL_MACROS_H
 
-#define LOG_OCL_ERROR(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d", __LINE__ ); printf(STRING); printf("Error= %d",x);}
+#define LOG_OCL_ERROR(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d ", __LINE__ ); printf(STRING); printf("\n    Error= %d\n",x);}
 
 #define LOG_OCL_COMPILER_ERROR(PROGRAM, DEVICE)                                          \
         {                                                                                \
