@@ -27,7 +27,7 @@ option( BUILD_NV_OPENCL    "Create Build for NV OpenCL implementation" OFF )
 option( BUILD_INTEL_OPENCL "Create Build for INTEL OpenCL implementation" OFF )
 option( BUILD_APPLE_OPENCL "Create Build for INTEL OpenCL implementation" OFF )
 
-
+ 
 IF(${BUILD_AMD_OPENCL} STREQUAL ON)
         IF ( DEFINED ENV{AMDAPPSDKROOT} ) 
                 message (STATUS "AMDAPPSDKROOT environment variable is set")
