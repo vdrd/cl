@@ -1,6 +1,6 @@
 #pragma	once
-#include "gaussian.h"
-#include "gaussian_kernel.h"
+#include "median.h"
+#include "median_kernel.h"
 #include <math.h>
 
 using std::cout;
@@ -17,16 +17,16 @@ ImageFilter::ImageFilter(string &_filename)
     host_image = NULL;
     filename = _filename;
     load_bmp_image();
-    setup_filter();
+    //setup_filter();
 }
 
-void ImageFilter::setup_filter( )
-{
-    float lFilter[WINDOW_SIZE*WINDOW_SIZE] = {  1.f/16,  2.f/16,  1.f/16,
-                                                2.f/16,  4.f/16,  2.f/16,
-                                                1.f/16,  2.f/16,  1.f/16  };
-    memcpy(filter, lFilter, WINDOW_SIZE*WINDOW_SIZE*sizeof(float));
-}
+//void ImageFilter::setup_filter( )
+//{
+//    float lFilter[WINDOW_SIZE*WINDOW_SIZE] = {  1.f/16,  2.f/16,  1.f/16,
+//                                                2.f/16,  4.f/16,  2.f/16,
+//                                                1.f/16,  2.f/16,  1.f/16  };
+//    memcpy(filter, lFilter, WINDOW_SIZE*WINDOW_SIZE*sizeof(float));
+//}
 
 void ImageFilter::load_bmp_image( )
 {
@@ -35,7 +35,7 @@ void ImageFilter::load_bmp_image( )
 
 void ImageFilter::write_bmp_image( )
 {
-    std::string filteredFileName("gaussian_filtered.bmp") ;
+    std::string filteredFileName("median_filtered.bmp") ;
     WriteBMPGrayscaleImageFloat(filteredFileName, &image, GPU_output);
 }
 
@@ -73,12 +73,12 @@ void ImageFilter::cleanup()
     cout << "Cleaned up!\n";
 }
 
-void ImageFilter::init_GPU_OpenCL( )
+void ImageFilter::init_OpenCL( )
 {
     //Allocate GPU output image memory
     GPU_output = NULL;
     GPU_output = (float*) calloc(1, image->height*image->width*sizeof(float) );
-
+    deviceType = CL_DEVICE_TYPE_GPU;
     setupOCLPlatform();
     setupOCLProgram();
     setupOCLkernels();
@@ -128,7 +128,7 @@ cl_int ImageFilter::setupOCLProgram()
 {
     cl_int status;
     program = clCreateProgramWithSource(context, 1,
-                (const char **)&gaussian_kernel, NULL, &status);
+                (const char **)&median_kernel, NULL, &status);
     LOG_OCL_ERROR(status, "clCreateProgramWithSource Failed" );
 
     // Build the program
@@ -148,7 +148,7 @@ cl_int ImageFilter::setupOCLkernels()
 {
     cl_int status;
     // Create the OpenCL kernel
-    gd_kernel = clCreateKernel(program, "gaussian_filter_kernel", &status);
+    kernel = clCreateKernel(program, "median_filter_kernel", &status);
     LOG_OCL_ERROR(status, "clCreateKernel Failed" );
 
     return status;
@@ -223,13 +223,12 @@ void ImageFilter::run_gaussian_filter_kernel()
     cl_int status;
 
     int windowSize = WINDOW_SIZE;
-    status = clSetKernelArg(gd_kernel, 0, sizeof(cl_mem), (void*)&ocl_raw);
-    status = clSetKernelArg(gd_kernel, 1, sizeof(cl_mem), (void*)&ocl_filtered_image);
-    status = clSetKernelArg(gd_kernel, 2, sizeof(cl_mem), (void*)&ocl_filter);
-    status = clSetKernelArg(gd_kernel, 3, sizeof(int), (void*)&windowSize);
+    status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&ocl_raw);
+    status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&ocl_filtered_image);
+    status = clSetKernelArg(kernel, 2, sizeof(int), (void*)&windowSize);
     status = clEnqueueNDRangeKernel(
                         commandQueue,
-                        gd_kernel,
+                        kernel,
                         2,
                         NULL,
                         gwsize,
@@ -249,7 +248,7 @@ int main(int argc, char* argv[])
     unsigned int num_of_frames = 0;
     try
     {
-        img_filter->init_GPU_OpenCL();
+        img_filter->init_OpenCL();
         img_filter->start_GPU_Timer();
         img_filter->run_GPU();
         img_filter->stop_GPU_Timer();

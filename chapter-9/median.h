@@ -1,7 +1,6 @@
 #pragma once
-#ifndef OCL_GAUSSIAN_H
-#define OCL_GAUSSIAN_H
-#include <CL/cl_gl.h>
+#ifndef OCL_MEDIAN_H
+#define OCL_MEDIAN_H
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_gl.h>
@@ -19,6 +18,7 @@
 #include <ocl_macros.h>
 
 using std::string;
+
 
 #define		WINDOW_SIZE   3
 
@@ -61,7 +61,7 @@ private:
     cl_context                  context;
     cl_command_queue            commandQueue;
     cl_program                  program;
-    cl_kernel                   gd_kernel;
+    cl_kernel                   kernel;
 	size_t						gwsize[2];					// OpenCL global work size
 	size_t						lwsize[2];					// OpenCL local work size
     cl_mem                      ocl_filter, ocl_raw, ocl_filtered_image;
@@ -72,6 +72,6 @@ private:
 	float						*GPU_raw,	*GPU_filtered_image;
     float                       filter[WINDOW_SIZE*WINDOW_SIZE];
 	float*				        GPU_output;
-	Timer				        timer_GPU;
+	Timer				timer_GPU;
 };
 #endif

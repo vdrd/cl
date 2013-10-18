@@ -68,12 +68,12 @@ int main(void) {
             VECTOR_SIZE * sizeof(float), B, 0, NULL, NULL);
 
     //Open the file for reading
-    fopen_s(&fp, "saxpy_kernel_binary_gpu.clbin", "rb");
+    fp = fopen("saxpy_kernel_binary_gpu.clbin", "rb");
     fseek(fp,0L,SEEK_END);
     size_t fileSize = ftell(fp);
     rewind(fp);
     unsigned char * saxpy_kernel = new unsigned char [fileSize];
-    fread_s(saxpy_kernel,fileSize,1,fileSize,fp);
+    fread(saxpy_kernel,fileSize,1,fp);
     // Create a program from the kernel source
     cl_int binary_status;
     cl_program program = clCreateProgramWithBinary(context, 1, 
