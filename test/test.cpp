@@ -1,15 +1,10 @@
-//If you want to build the file directly at the command prompt then use the following commands. 
-//AMD commands
-//cl /c Example1_SAXPY.cpp /I"%AMDAPPSDKROOT%\include"
-//link  /OUT:"Example.exe" "%AMDAPPSDKROOT%\lib\x86_64\OpenCL.lib" Example1_SAXPY.obj
-//nVIDIA commands
-//cl /c Example1_SAXPY.cpp /I"%NVSDKCOMPUTE_ROOT%\OpenCL\common\inc"
-//link  /OUT:"Example.exe" "%NVSDKCOMPUTE_ROOT%\OpenCL\common\lib\x64\OpenCL.lib" Example1_SAXPY.obj
-
-
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 
 #define VECTOR_SIZE 1024
 typedef struct
@@ -32,8 +27,8 @@ const char *sizeof_kernel =
 "}                                          \n";
 
 int main(void) {
-	OpenCLStruct* oclStruct = (OpenCLStruct*)malloc(sizeof(OpenCLStruct)*VECTOR_SIZE);
-	printf("The size of the OpenCLStruct provided by the host compiler is = %d bytes\n",sizeof(OpenCLStruct) );
+    OpenCLStruct* oclStruct = (OpenCLStruct*)malloc(sizeof(OpenCLStruct)*VECTOR_SIZE);
+    printf("The size of the OpenCLStruct provided by the host compiler is = %d bytes\n",sizeof(OpenCLStruct) );
 
     // Get platform and device information
     cl_platform_id * platforms = NULL;
@@ -73,15 +68,15 @@ int main(void) {
 
     // Build the program
     clStatus = clBuildProgram(program, 1, device_list, NULL, NULL, NULL);
-	if(clStatus != CL_BUILD_SUCCESS)
-	{
-		printf("Program Build failed\n");
-		size_t length;
-		char buildLog[2048];
-		clGetProgramBuildInfo(program, *device_list, CL_PROGRAM_BUILD_LOG, sizeof(buildLog), buildLog, &length);
-		printf("--- Build log ---\n%s",buildLog);
-		exit(1);
-	}
+    if(clStatus != CL_BUILD_SUCCESS)
+    {
+        printf("Program Build failed\n");
+        size_t length;
+        char buildLog[2048];
+        clGetProgramBuildInfo(program, *device_list, CL_PROGRAM_BUILD_LOG, sizeof(buildLog), buildLog, &length);
+        printf("--- Build log ---\n%s",buildLog);
+        exit(1);
+    }
     // Create the OpenCL kernel
     cl_kernel kernel = clCreateKernel(program, "sizeof_kernel", &clStatus);
 

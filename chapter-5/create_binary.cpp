@@ -1,7 +1,12 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
+
 
 #define BINARY_BUFFER_SIZE 4096*10
 
@@ -41,7 +46,7 @@ void createBinary(const char * kernelCode, cl_context context)
     //Create the binary array
     for(cl_uint i = 0; i < num_devices; i++)
         programBin[i] = new char[binarySize[i]]; 
-	//Read the Binary
+    //Read the Binary
     clStatus = clGetProgramInfo(program, CL_PROGRAM_BINARIES, 
                                 sizeof(unsigned char *) * num_devices, 
                                 programBin, &bytes_read); 
