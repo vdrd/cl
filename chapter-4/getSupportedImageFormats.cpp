@@ -111,12 +111,18 @@ int main(void) {
     };
 
     context = clCreateContext( NULL, num_devices, device_list, NULL, NULL, &clStatus);
-    cl_mem_object_type image_type[6] = {CL_MEM_OBJECT_IMAGE1D,
-                                        CL_MEM_OBJECT_IMAGE1D_BUFFER, 
-                                        CL_MEM_OBJECT_IMAGE1D_ARRAY,
-                                        CL_MEM_OBJECT_IMAGE2D, 
-                                        CL_MEM_OBJECT_IMAGE2D_ARRAY,
-                                        CL_MEM_OBJECT_IMAGE3D};
+    cl_mem_object_type image_type[6] = {
+#ifdef OPENCL_1_2
+		CL_MEM_OBJECT_IMAGE1D,
+        CL_MEM_OBJECT_IMAGE1D_BUFFER, 
+        CL_MEM_OBJECT_IMAGE1D_ARRAY,
+#endif
+        CL_MEM_OBJECT_IMAGE2D, 
+#ifdef OPENCL_1_2
+        CL_MEM_OBJECT_IMAGE2D_ARRAY,
+#endif
+        CL_MEM_OBJECT_IMAGE3D
+	};
     cl_image_format *image_formats;
     cl_uint num_image_formats;
     clStatus= clGetSupportedImageFormats (context,
@@ -128,7 +134,11 @@ int main(void) {
     image_formats = (cl_image_format *)malloc(sizeof(cl_image_format) * num_image_formats);
     clStatus= clGetSupportedImageFormats (context,
                 CL_MEM_READ_ONLY,
+#ifdef OPENCL_1_2				
                 CL_MEM_OBJECT_IMAGE1D,
+#else
+				CL_MEM_OBJECT_IMAGE2D,
+#endif
                 num_image_formats,
                 image_formats,
                 &num_image_formats);

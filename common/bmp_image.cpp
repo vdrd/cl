@@ -1,4 +1,6 @@
 #include <bmp_image.h>
+#include <stdio.h>
+
 void
 ReadBMPImage(std::string filename,  Image **image)
 {

@@ -4,7 +4,6 @@
 #include <CL/cl.h>
 #endif
 
-#include <CL/cl.h>
 #include <iostream>
 #define NUM_OF_ELEMENTS 32 
 
