@@ -239,13 +239,11 @@ void ImageFilter::run_gaussian_filter_kernel()
                         &wlist[0]);
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel Failed" );
     clWaitForEvents(1, &wlist[0]);
-
 }
 
 int main(int argc, char* argv[])
 {
-    ImageFilter*	img_filter;
-    img_filter = new ImageFilter(string(argv[1]));
+    ImageFilter*	img_filter = new ImageFilter(string(argv[1]));
     unsigned int num_of_frames = 0;
     try
     {

@@ -1,7 +1,6 @@
 #pragma once
 #ifndef OCL_GAUSSIAN_H
 #define OCL_GAUSSIAN_H
-#include <CL/cl_gl.h>
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_gl.h>

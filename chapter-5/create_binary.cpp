@@ -7,6 +7,9 @@
 #include <CL/cl.h>
 #endif
 
+#ifndef WIN32
+#define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),(mode)))==NULL
+#endif
 
 #define BINARY_BUFFER_SIZE 4096*10
 

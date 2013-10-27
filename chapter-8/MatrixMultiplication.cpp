@@ -1,4 +1,6 @@
+#ifdef WIN32
 #include <windows.h>
+#endif
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -17,7 +19,7 @@ bool verify = true;
 
 #define BLOCK_SIZE 8
 
-__int64 CounterStart = 0;
+int64_t CounterStart = 0;
 double PCFreq = 0.0;
 void StartCounter();
 
@@ -1336,6 +1338,7 @@ bool resultIsCorrect(float* pA,float* pB,float* pCTest, size_t dim)
 
 void StartCounter()
 {
+#ifdef WIN32
     LARGE_INTEGER li;
     if(!QueryPerformanceFrequency(&li))
     std::cout << "QueryPerformanceFrequency failed!\n";
@@ -1344,4 +1347,8 @@ void StartCounter()
 
     QueryPerformanceCounter(&li);
     CounterStart = li.QuadPart;
+#else
+	PCFreq = CLOCKS_PER_SEC;
+	CounterStart = clock();
+#endif
 }
