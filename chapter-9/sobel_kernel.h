@@ -26,7 +26,7 @@ static const char *sobel_kernel =
 "    }                                                                                                 \n"
 "                                                                                                      \n"
 "    computedFilter = sqrt(gradientX*gradientX + gradientY*gradientY);                                 \n"
-"    write_imagef(oimage, (int2)(x, y), (float4)(computedFilter, 0.0, 0.0, 1.0);                       \n"
+"    write_imagef(oimage, (int2)(x, y), (float4)(computedFilter, 0.0f, 0.0f, 1.0f) );                    \n"
 "}                                                                                                     \n"
 "                                                                                                      \n"
 "                                                                                                      \n";
