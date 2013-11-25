@@ -1,7 +1,7 @@
 #if !defined OCL_MACROS_H
 #define OCL_MACROS_H
 
-#define LOG_OCL_ERROR(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d ", __LINE__ ); printf(STRING); printf("\n    Error= %d\n",x);}
+#define LOG_OCL_ERROR(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d ", __LINE__ ); printf(STRING); printf("\n    Error= %d\n",x); exit(-1); }
 
 #define LOG_OCL_COMPILER_ERROR(PROGRAM, DEVICE)                                          \
         {                                                                                \
@@ -16,16 +16,16 @@
                                               &buildLogSize);                            \
             if(logStatus != CL_SUCCESS)                                                  \
             {                                                                            \
-                std::cout << "Error # "<< logStatus                                      \
-                    <<":: clGetProgramBuildInfo<CL_PROGRAM_BUILD_LOG> failed.";          \
+                printf( "Error # %d logStatus ");                                        \
+                printf( ":: clGetProgramBuildInfo<CL_PROGRAM_BUILD_LOG> failed.", logStatus);          \
                 exit(1);                                                                 \
             }                                                                            \
                                                                                          \
             buildLog = (char*)malloc(buildLogSize);                                      \
             if(buildLog == NULL)                                                         \
             {                                                                            \
-                std::cout << "Failed to allocate host memory. (buildLog)\n";             \
-                return -1;                                                               \
+                printf("Failed to allocate host memory. (buildLog)\n");                  \
+                exit(1);                                                                 \
             }                                                                            \
             memset(buildLog, 0, buildLogSize);                                           \
                                                                                          \
@@ -37,20 +37,21 @@
                                               NULL);                                     \
             if(logStatus != CL_SUCCESS)                                                  \
             {                                                                            \
-                std::cout << "Error # "<< logStatus                                      \
-                    <<":: clGetProgramBuildInfo<CL_PROGRAM_BUILD_LOG> failed.";          \
+                printf( "Error # %d logStatus ", logStatus);                             \
+                printf( ":: clGetProgramBuildInfo<CL_PROGRAM_BUILD_LOG> failed.");       \
                 exit(1);                                                                 \
             }                                                                            \
                                                                                          \
-            std::cout << " \n\t\t\tBUILD LOG\n";                                         \
-            std::cout << " ************************************************\n";          \
-            std::cout << buildLog << std::endl;                                          \
-            std::cout << " ************************************************\n";          \
+            printf(" \n\t\t\tBUILD LOG\n");                                              \
+            printf(" ************************************************\n");               \
+            printf(buildLog);                                                            \
+            printf(" ************************************************\n");               \
             free(buildLog);                                                              \
+            exit(1);                                                              \
         } 
 
 /* Get platform information and set up the Platform for the defined vendor*/                                                            
-#define OCL_CREATE_PLATFORM( VENDOR, PLATFORM )                                      \
+#define OCL_CREATE_PLATFORMS( PLATFORM )                                      \
     cl_uint     num_platforms;                                                        \
     if ((clGetPlatformIDs(0, NULL, &num_platforms)) == CL_SUCCESS)                    \
     {                                                                                 \
@@ -63,7 +64,7 @@
     }                                                                                 
 
 /*Release the Allocated Platforms*/
-#define OCL_RELEASE_PLATFORMS( PLATFORM )                                                 \
+#define OCL_RELEASE_PLATFORMS( PLATFORM )                                             \
     free(PLATFORM);
 
 #define OCL_CREATE_DEVICE( PLATFORM, DEVICE_TYPE, DEVICES )                                 \

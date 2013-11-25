@@ -76,6 +76,7 @@ int main()
          std::cout <<"IMAGES not supported\n";
          return 1;
      }
+
     //Create an execution context for the selected platform and device.
     cl_context_properties contextProperty[3] =
     {
@@ -167,6 +168,8 @@ int main()
 
     //Create kernel and set the kernel arguments
     kernel = clCreateKernel(program, "image_test", &status);
+    LOG_OCL_ERROR(status, "clCreateKernel of image_test failed" );
+
     clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&clImage);
     clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&out);
 
@@ -185,7 +188,11 @@ int main()
     status = clEnqueueTask(command_queue, kernel, 0, NULL, &task_event);
     LOG_OCL_ERROR(status, "clEnqueueTask Failed" );
     /* Map the result back to host address */
-    result = (cl_float4*)clEnqueueMapBuffer(command_queue, out, CL_TRUE, CL_MAP_READ, 0, sizeof(cl_float4)*pixels_read, 1, &task_event, &map_event, &status);
+    result = (cl_float4*)clEnqueueMapBuffer(command_queue, out, CL_TRUE, CL_MAP_READ, 0, 
+                                            sizeof(cl_float4)*pixels_read, 1, 
+                                            &task_event, &map_event, &status);
+    LOG_OCL_ERROR(status, "clEnqueueMapBuffer Failed" );
+
     printf(" SAMPLER mode set to CL_ADDRESS_REPEAT | CL_FILTER_NEAREST\n");
     printf("\nPixel values retreived based on the filter and Addressing mode selected\n");
     printf("(float2)(0.5f,0.5f) = %f,%f,%f,%f\n",result[0].s[0],result[0].s[1],result[0].s[2],result[0].s[3]);
@@ -205,12 +212,19 @@ int main()
                             CL_ADDRESS_MIRRORED_REPEAT,
                             CL_FILTER_LINEAR,
                             &status);
+    LOG_OCL_ERROR(status, "clCreateSampler Failed" );
+
     clSetKernelArg(kernel, 2, sizeof(cl_sampler), (void*)&sampler);
     //Enqueue the kernel 
     status = clEnqueueTask(command_queue, kernel, 0, NULL, &task_event);
     LOG_OCL_ERROR(status, "clEnqueueTask Failed" );
+
     /* Map the result back to host address */
-    result = (cl_float4*)clEnqueueMapBuffer(command_queue, out, CL_TRUE, CL_MAP_READ, 0, sizeof(cl_float4)*pixels_read, 1, &task_event, &map_event, &status);
+    result = (cl_float4*)clEnqueueMapBuffer(command_queue, out, CL_TRUE, 
+                                            CL_MAP_READ, 0, sizeof(cl_float4)*pixels_read, 
+                                            1, &task_event, &map_event, &status);
+    LOG_OCL_ERROR(status, "clEnqueueMapBuffer Failed" );
+
     printf(" SAMPLER mode set to CL_ADDRESS_MIRRORED_REPEAT | CL_FILTER_LINEAR\n");
     printf("\nPixel values retreived based on the filter and Addressing mode selected\n");
     printf("(float2)(0.5f,0.5f) = %f,%f,%f,%f\n",result[0].s[0],result[0].s[1],result[0].s[2],result[0].s[3]);

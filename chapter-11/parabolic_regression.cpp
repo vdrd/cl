@@ -228,7 +228,7 @@ vSum = 0.0f;
     // Get platform and device information
     cl_platform_id * platforms = NULL;
     //Set up the Platform
-    OCL_CREATE_PLATFORM( "AMD", platforms );
+    OCL_CREATE_PLATFORMS( platforms );
     
     //Get the devices list and choose the type of device you want to run on
     cl_device_id     *device_list = NULL;

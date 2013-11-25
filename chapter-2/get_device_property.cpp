@@ -5,7 +5,7 @@
 #else
 #include <CL/cl.h>
 #endif
-
+//#include <ocl_macros.h>
 
 void PrintDeviceInfo(cl_device_id device)
 {
@@ -30,38 +30,41 @@ void PrintDeviceInfo(cl_device_id device)
 
 int main(void) {
 
-
-    // Get platform and device information
-    cl_platform_id   platform;
-    cl_device_id    *devices;
-    cl_uint          num_platforms;
-    cl_uint          num_devices;
     cl_int           clError;
-    char             queryBuffer[1024];
-    //Get the Number of Platforms available
-    /*cl_int clGetPlatformIDs (cl_uint num_entries,
-                               cl_platform_id *platforms,
-                               cl_uint *num_platforms);*/
+
+    // Get the Number of Platforms available
     // Note that the second parameter "platforms" is set to NULL. If this is NULL then this argument is ignored
     // and the API returns the total number of OpenCL platforms available.
-    clError = clGetPlatformIDs(1, &platform, &num_platforms);
-    if(clError != CL_SUCCESS)
+    cl_platform_id * platforms = NULL;
+
+    cl_uint     num_platforms = 0;                                                       
+    if ((clGetPlatformIDs(0, NULL, &num_platforms)) == CL_SUCCESS)                   
+    {                         
+        printf("Number of OpenCL platforms available in the system: %d\n", num_platforms);
+        platforms = (cl_platform_id *)malloc(sizeof(cl_platform_id)*num_platforms);  
+        if(clGetPlatformIDs(num_platforms, platforms, NULL) != CL_SUCCESS)           
+        {                                                                            
+            free(platforms);                                                         
+            printf("Error in call to clGetPlatformIDs....\n Exiting");
+            exit(0);                                                  
+        }                                                                            
+    }                                                                                
+
+    if (num_platforms == 0)
     {
-        printf("Error in call to clGetPlatformIDs....\n Exiting");
-        exit(0);
+        printf("No OpenCL Platforms Found ....\n Exiting");
+        exit(0);      
     }
     else
     {
-        if (num_platforms == 0)
+        // We have obtained one platform here.
+        // Lets enumerate the devices available in this Platform.
+        for (cl_uint idx=0;idx<num_platforms; idx++)
         {
-            printf("No OpenCL Platforms Found ....\n Exiting");
-        }
-        else
-        {
-            // We have obtained one platform here.
-            // Lets enumerate the devices available in this Platform.
-            printf("Printing all the OpenCL Device Info:\n\n");
-            clError = clGetDeviceIDs (platform, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
+            cl_device_id    *devices;
+            cl_uint          num_devices;
+            printf("\nPrinting OpenCL Device Info For Platform ID : %d\n", idx);
+            clError = clGetDeviceIDs (platforms[idx], CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
             if (clError != CL_SUCCESS)
             {
                 printf("Error Getting number of devices... Exiting\n ");
@@ -70,18 +73,18 @@ int main(void) {
             // If successfull the num_devices contains the number of devices available in the platform
             // Now lets get all the device list. Before that we need to malloc devices
             devices = (cl_device_id *)malloc(sizeof(cl_device_id) * num_devices);
-            clError = clGetDeviceIDs (platform, CL_DEVICE_TYPE_ALL, num_devices, devices, &num_devices);
+            clError = clGetDeviceIDs (platforms[idx], CL_DEVICE_TYPE_ALL, num_devices, devices, &num_devices);
             if (clError != CL_SUCCESS)
             {
                 printf("Error Getting number of devices... Exiting\n ");
                 exit(0);
             }
-            //
-            for (int index = 0; index < num_devices; index++)
+            
+            for (cl_uint dIndex = 0; dIndex < num_devices; dIndex++)
             {
-                 printf("==================Device No %d======================\n",index);
-                 PrintDeviceInfo(devices[index]);
-                 printf("====================================================\n");
+                    printf("==================Device No %d======================\n",dIndex);
+                    PrintDeviceInfo(devices[dIndex]);
+                    printf("====================================================\n\n");
             }
         }
     }

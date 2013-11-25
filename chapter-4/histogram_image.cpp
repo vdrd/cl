@@ -125,13 +125,11 @@ int main(int argc, char *argv[])
     //Setup the OpenCL Platform,
     //Get the first available platform. Use it as the default platform
     status = clGetPlatformIDs(1, &platform, NULL);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clGetPlatformIDs";
+    LOG_OCL_ERROR(status, "clGetPlatformIDs failed." );
 
     //Get the first available device
     status = clGetDeviceIDs (platform, dType, 1, &device, NULL);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clGetDeviceIDs";
+    LOG_OCL_ERROR(status, "clGetDeviceIDs failed." );
     
     //Create an execution context for the selected platform and device.
     cl_context_properties contextProperty[3] = 
@@ -179,6 +177,7 @@ int main(int argc, char *argv[])
         image->pixels, //R,G,B,A, R,G,B,A, R,G,B,A
         &status); 
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
+
     //Create OpenCL device output buffer
     intermediateHistR = clCreateBuffer(
         context, 
@@ -224,12 +223,14 @@ int main(int argc, char *argv[])
 
     // Set the arguments of the kernel
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&clImage); 
-    status = clSetKernelArg(kernel, 1, 3 * groupSize * binSize * sizeof(cl_uchar), NULL); 
-    status = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&intermediateHistR);
-    status = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&intermediateHistG);
-    status = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&intermediateHistB);
-    status = clSetKernelArg(kernel, 5, sizeof(cl_int), (void*)&blockWidth);
-    status = clSetKernelArg(kernel, 6, sizeof(cl_int), (void*)&blockHeight);
+    status |= clSetKernelArg(kernel, 1, 3 * groupSize * binSize * sizeof(cl_uchar), NULL); 
+    status |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&intermediateHistR);
+    status |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&intermediateHistG);
+    status |= clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&intermediateHistB);
+    status |= clSetKernelArg(kernel, 5, sizeof(cl_int), (void*)&blockWidth);
+    status |= clSetKernelArg(kernel, 6, sizeof(cl_int), (void*)&blockHeight);
+    LOG_OCL_ERROR(status, "clCreateContext failed." );
+
     // Execute the OpenCL kernel on the list
     cl_event ndrEvt;
     size_t localThreads[2]  = {4,4};

@@ -11,7 +11,7 @@ __pragma( pack(push, 1) )
 #pragma pack(push, 1)
 #define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),(mode)))==NULL
 #endif
-	
+    
 typedef struct
 {
     unsigned char x;
@@ -43,6 +43,7 @@ typedef struct {
     unsigned int clrUsed;
     unsigned int clrImportant;
 }  BMPInfoHeader ;
+
 #ifdef WIN32
 __pragma( pack(pop) )
 #else

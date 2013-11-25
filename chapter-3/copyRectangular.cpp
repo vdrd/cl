@@ -3,19 +3,19 @@
 #else
 #include <CL/cl.h>
 #endif
-
+#include <ocl_macros.h>
 #include <iostream>
+
 #define NUM_OF_ELEMENTS 32 
+#define DEVICE_TYPE CL_DEVICE_TYPE_GPU
 
 int main(int argc, char *argv[])
 {
-    cl_int status = 0;
-    cl_device_type dType = CL_DEVICE_TYPE_GPU;
-    cl_platform_id platform = NULL;
-    cl_device_id   device;
-    cl_context     context;
+    cl_int           status = 0;
+    cl_context       context;
     cl_command_queue commandQueue;
-    cl_mem clBufferSrc, clBufferDst;
+    cl_mem           clBufferSrc, clBufferDst;
+
     cl_int hostBuffer[NUM_OF_ELEMENTS] =
     {
          0,  1,  2,  3, 
@@ -29,39 +29,35 @@ int main(int argc, char *argv[])
     };
 
     //Setup the OpenCL Platform, 
-    //Get the first available platform. Use it as the default platform
-    status = clGetPlatformIDs(1, &platform, NULL);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clGetPlatformIDs";
+    // Get platform and device information
+    cl_platform_id * platforms = NULL;
+    OCL_CREATE_PLATFORMS( platforms );
 
-    //Get the first available device 
-    status = clGetDeviceIDs (platform, dType, 1, &device, NULL);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clGetDeviceIDs";
+    // Get the devices list and choose the type of device you want to run on
+    cl_device_id *device_list = NULL;
+    OCL_CREATE_DEVICE( platforms[0], DEVICE_TYPE, device_list);
     
     //Create an execution context for the selected platform and device. 
     cl_context_properties cps[3] = 
     {
         CL_CONTEXT_PLATFORM,
-        (cl_context_properties)platform,
+        (cl_context_properties)platforms[0],
         0
     };
     context = clCreateContextFromType(
         cps,
-        dType,
+        DEVICE_TYPE,
         NULL,
         NULL,
         &status);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateContextFromType";
+    LOG_OCL_ERROR(status, "clCreateContextFromType Failed..." );
 
     // Create command queue
     commandQueue = clCreateCommandQueue(context,
-                                        device,
+                                        device_list[0],
                                         0,
                                         &status);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateCommandQueue";
+    LOG_OCL_ERROR(status, "clCreateCommandQueue Failed..." );
 
     //Create OpenCL device input buffer
     clBufferSrc = clCreateBuffer(
@@ -70,8 +66,7 @@ int main(int argc, char *argv[])
         sizeof(cl_uint) * NUM_OF_ELEMENTS,
         hostBuffer,
         &status); 
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateBuffer";
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed..." );
 
     //Copy commands
     cl_uint copyBuffer[NUM_OF_ELEMENTS] = 
@@ -92,27 +87,29 @@ int main(int argc, char *argv[])
         sizeof(cl_uint) * NUM_OF_ELEMENTS,
         copyBuffer,
         &status); 
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clCreateBuffer";
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed..." );
 
     //Copy the contents of the rectangular buffer pointed by clBufferSrc to  clBufferSrc
-    size_t src_origin[3] = {0, 4*sizeof(cl_uint), 0};
-    size_t dst_origin[3] = {0, 1*sizeof(cl_uint), 0};
-    size_t region[3] = {3* sizeof(int), 2,1};
+    size_t   src_origin[3] = {0, 4, 0};
+    size_t   dst_origin[3] = {0, 1, 0};
+    size_t   region[3]     = {3*sizeof(int), 2, 1}; /*width in bytes, height in rows, depth in slices 
+                                                      For 2D depth should be 1*/
     cl_event copyEvent;
     status = clEnqueueCopyBufferRect ( commandQueue, 	//copy command will be queued
                     clBufferSrc,		
                     clBufferDst,	
-                    src_origin,	  //offset associated with src_buffer
-                    dst_origin,   //offset associated with src_buffer
+                    src_origin,	  //in bytes - src_origin[2] * src_slice_pitch + src_origin[1] * src_row_pitch + src_origin[0]
+                    dst_origin,   //in bytes - dst_origin[2] * dst_slice_pitch + dst_origin[1] * dst_row_pitch + dst_origin[0]
                     region,		  //(width, height, depth) in bytes of the 2D or 3D rectangle being copied
-                    (NUM_OF_ELEMENTS / 8) * sizeof(int), /*buffer_row_pitch  */
-                    0,            //Its a 2D buffers. Hence the slice size is 0
-                    (NUM_OF_ELEMENTS / 8) * sizeof(int), /*buffer_row_pitch  */
-                    0,            //Its a 2D buffers. Hence the slice size is 0
+                    (NUM_OF_ELEMENTS / 8) * sizeof(int), /*src_row_pitch  */
+                    0,            //src_slice_pitch - Its a 2D buffers. Hence the slice size is 0
+                    (NUM_OF_ELEMENTS / 8) * sizeof(int), /*dst_row_pitch  */
+                    0,            //dst_slice_pitch - Its a 2D buffers. Hence the slice size is 0
                     0,
                     NULL,
                     &copyEvent);
+    LOG_OCL_ERROR(status, "clEnqueueCopyBufferRect Failed..." );
+    
     status = clWaitForEvents(1, &copyEvent);
     
     status = clEnqueueReadBuffer(
@@ -125,8 +122,7 @@ int main(int argc, char *argv[])
         0,
         NULL,
         NULL);
-    if(status != CL_SUCCESS)
-        std::cout << "Error # "<< status<<":: clEnqueueReadBuffer";
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer Failed..." );
 
     std::cout << "The copied destination buffer is as follows" << std::endl;
     for(int i=0; i<8; i++)

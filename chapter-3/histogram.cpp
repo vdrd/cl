@@ -10,6 +10,12 @@
 #include <ocl_macros.h>
 #include <bmp_image.h>
 #define USE_HOST_MEMORY
+#define DEVICE_TYPE CL_DEVICE_TYPE_GPU
+/* The histogram computation kernel computes the histogram of 256 pixels, 
+ * for each of R G and B components. Each work item first computes the histogram 
+ * and stores it into the local memory. 
+ * 
+*/
 const char *histogram_kernel =
 "#define BIN_SIZE 256                                                                  \n"
 "#pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable                       \n"
@@ -78,16 +84,17 @@ int main(int argc, char *argv[])
 {
     cl_int status = 0;
     cl_int binSize = 256;
-    cl_int groupSize = 16;
-    cl_int subHistgCnt;
-    cl_device_type dType = CL_DEVICE_TYPE_GPU;
-    cl_platform_id platform = NULL;
-    cl_device_id   device;
-    cl_context     context;
+    const cl_int groupSize = 16;
+    cl_int       subHistgCnt;
+    
+    cl_platform_id   platform = NULL;
+    cl_device_id     device;
+    cl_context       context;
     cl_command_queue commandQueue;
-    cl_mem         imageBuffer;
-    cl_mem     intermediateHistR, intermediateHistG, intermediateHistB; /*Intermediate Image Histogram buffer*/
-    cl_uint *  midDeviceBinR, *midDeviceBinG, *midDeviceBinB;
+    cl_mem           imageBuffer;
+    /*Intermediate Image Histogram buffer*/
+    cl_mem     intermediateHistR, intermediateHistG, intermediateHistB; 
+    cl_uint  *midDeviceBinR, *midDeviceBinG, *midDeviceBinB;
     cl_uint  *deviceBinR,*deviceBinG,*deviceBinB;
     //Read a BMP Image
     Image *image;
@@ -112,7 +119,7 @@ int main(int argc, char *argv[])
     LOG_OCL_ERROR(status, "clGetPlatformIDs Failed." );
 
     //Get the first available device 
-    status = clGetDeviceIDs (platform, dType, 1, &device, NULL);
+    status = clGetDeviceIDs (platform, DEVICE_TYPE, 1, &device, NULL);
     LOG_OCL_ERROR(status, "clGetDeviceIDs Failed." );
     
     //Create an execution context for the selected platform and device. 
@@ -124,7 +131,7 @@ int main(int argc, char *argv[])
     };
     context = clCreateContextFromType(
         cps,
-        dType,
+        DEVICE_TYPE,
         NULL,
         NULL,
         &status);
@@ -136,6 +143,7 @@ int main(int argc, char *argv[])
                                         0,
                                         &status);
     LOG_OCL_ERROR(status, "clCreateCommandQueue Failed." );
+
 #if !defined(USE_HOST_MEMORY)
     //Create OpenCL device input buffer
     imageBuffer = clCreateBuffer(
@@ -278,7 +286,7 @@ int main(int argc, char *argv[])
     
     status = clWaitForEvents(3, readEvt);
     //status = clFinish(commandQueue);
-    LOG_OCL_ERROR(status, "clWaitForEvents for readEvt." );
+    LOG_OCL_ERROR(status, "clWaitForEvents for readEvt failed." );
 
     // Calculate final histogram bin 
     for(int i = 0; i < subHistgCnt; ++i)

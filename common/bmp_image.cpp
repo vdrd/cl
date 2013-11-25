@@ -1,6 +1,8 @@
 #include <bmp_image.h>
 #include <stdio.h>
-
+/* For more information on the BMP header, go to 
+   http://en.wikipedia.org/wiki/BMP_file_format 
+   */
 void
 ReadBMPImage(std::string filename,  Image **image)
 {
