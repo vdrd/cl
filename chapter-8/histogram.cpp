@@ -9,92 +9,66 @@
 #endif
 #include <ocl_macros.h>
 #include <bmp_image.h>
-#define USE_HOST_MEMORY
-#define DEVICE_TYPE CL_DEVICE_TYPE_GPU
-/* The histogram computation kernel computes the histogram of 256 pixels, 
- * for each of R G and B components. Each work item first computes the histogram 
- * and stores it into the local memory. 
- * 
-*/
+//#define USE_HOST_MEMORY
 const char *histogram_kernel =
-"#define BIN_SIZE 256                                                                  \n"
-"#pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable                       \n"
-"__kernel                                                                              \n"
-"void histogram_kernel(__global const uint* data,                                      \n"
-"                  __local uchar* sharedArray,                                         \n"
-"                  __global uint* binResultR,                                          \n"
-"                  __global uint* binResultG,                                          \n"
-"                  __global uint* binResultB)                                          \n"
-"{                                                                                     \n"
-"    size_t localId = get_local_id(0);                                                 \n"
-"    size_t globalId = get_global_id(0);                                               \n"
-"    size_t groupId = get_group_id(0);                                                 \n"
-"    size_t groupSize = get_local_size(0);                                             \n"
-"     __local uchar* sharedArrayR = sharedArray;                                       \n"
-"     __local uchar* sharedArrayG = sharedArray + groupSize * BIN_SIZE;                \n"
-"     __local uchar* sharedArrayB = sharedArray + 2 * groupSize * BIN_SIZE;            \n"
-"                                                                                      \n"
-"    /* initialize shared array to zero */                                             \n"
-"    for(int i = 0; i < BIN_SIZE; ++i)                                                 \n"
-"    {                                                                                 \n"
-"        sharedArrayR[localId * BIN_SIZE + i] = 0;                                     \n"
-"        sharedArrayG[localId * BIN_SIZE + i] = 0;                                     \n"
-"        sharedArrayB[localId * BIN_SIZE + i] = 0;                                     \n"
-"    }                                                                                 \n"
-"                                                                                      \n"
-"    barrier(CLK_LOCAL_MEM_FENCE);                                                     \n"
-"                                                                                      \n"
-"    /* calculate thread-histograms */                                                 \n"
-"    for(int i = 0; i < BIN_SIZE; ++i)                                                 \n"
-"    {                                                                                 \n"
-"        uint value = data[globalId * BIN_SIZE + i];                                   \n"
-"        uint valueR = value & 0xFF;                                                   \n"
-"        uint valueG = (value & 0xFF00) >> 8;                                          \n"
-"        uint valueB = (value & 0xFF0000) >> 16;                                       \n"
-"        sharedArrayR[localId * BIN_SIZE + valueR]++;                                  \n"
-"        sharedArrayG[localId * BIN_SIZE + valueG]++;                                  \n"
-"        sharedArrayB[localId * BIN_SIZE + valueB]++;                                  \n"
-"    }                                                                                 \n"
-"                                                                                      \n"
-"    barrier(CLK_LOCAL_MEM_FENCE);                                                     \n"
-"                                                                                      \n"
-"    /* merge all thread-histograms into block-histogram */                            \n"
-"    for(int i = 0; i < BIN_SIZE / groupSize; i++)                                     \n"
-"    {                                                                                 \n"
-"        uint binCountR = 0;                                                           \n"
-"        uint binCountG = 0;                                                           \n"
-"        uint binCountB = 0;                                                           \n"
-"        for(int j = 0; j < groupSize; ++j)                                            \n"
-"        {                                                                             \n"
-"            binCountR += sharedArrayR[j * BIN_SIZE + i * groupSize + localId];        \n"
-"            binCountG += sharedArrayG[j * BIN_SIZE + i * groupSize + localId];        \n"
-"            binCountB += sharedArrayB[j * BIN_SIZE + i * groupSize + localId];        \n"
-"        }                                                                             \n"
-"                                                                                      \n"
-"        binResultR[groupId * BIN_SIZE + i * groupSize + localId] = binCountR;         \n"
-"        binResultG[groupId * BIN_SIZE + i * groupSize + localId] = binCountG;         \n"
-"        binResultB[groupId * BIN_SIZE + i * groupSize + localId] = binCountB;         \n"
-"    }                                                                                 \n"
-"}                                                                                     \n"
-"                                                                                      \n";
-
+"#define BIN_SIZE            256                                    \n"
+"#define ELEMENTS_TO_PROCESS 256                                    \n"
+"__kernel                                                           \n"
+"void histogram_kernel(__global const uint* data,                   \n"
+"                  __global uint* binResultR,                       \n"
+"                  __global uint* binResultG,                       \n"
+"                  __global uint* binResultB)                       \n"
+"{                                                                  \n"
+"  __local int sharedArrayR[BIN_SIZE];                              \n"
+"  __local int sharedArrayG[BIN_SIZE];                              \n"
+"  __local int sharedArrayB[BIN_SIZE];                              \n"
+"  __global uchar4 * image_data = data;                             \n"
+"  size_t localId   = get_local_id(0);                              \n"
+"  size_t globalId  = get_global_id(0);                             \n"
+"  size_t groupId   = get_group_id(0);                              \n"
+"  size_t groupSize = get_local_size(0);                            \n"
+"                                                                   \n"
+"  /* initialize shared array to zero */                            \n"
+"  sharedArrayR[localId] = 0;                                       \n"
+"  sharedArrayG[localId] = 0;                                       \n"
+"  sharedArrayB[localId] = 0;                                       \n"
+"                                                                   \n"
+"  barrier(CLK_LOCAL_MEM_FENCE);                                    \n"
+"  int groupOffset = groupId * groupSize * ELEMENTS_TO_PROCESS;     \n"
+"  /* calculate thread-histograms */                                \n"
+"  for(int i = 0; i < ELEMENTS_TO_PROCESS; ++i)                     \n"
+"  {                                                                \n"
+"    int index = groupOffset + i * groupSize + localId;             \n"
+"    //Coalesced read from global memory                            \n"
+"    uchar4 value = image_data[index];                              \n"
+"    atomic_inc(&sharedArrayR[value.x]);                            \n"
+"    atomic_inc(&sharedArrayG[value.y]);                            \n"
+"    atomic_inc(&sharedArrayB[value.w]);                            \n"
+"  }                                                                \n"
+"                                                                   \n"
+"  barrier(CLK_LOCAL_MEM_FENCE);                                    \n"
+"  //Coalesced write to global memory                               \n"
+"  binResultR[groupId * BIN_SIZE + localId] = sharedArrayR[localId];\n"
+"  binResultG[groupId * BIN_SIZE + localId] = sharedArrayR[localId];\n"
+"  binResultB[groupId * BIN_SIZE + localId] = sharedArrayR[localId];\n"
+"                                                                   \n"
+"}                                                                  \n";
 
 
 int main(int argc, char *argv[])
 {
     cl_int status = 0;
     cl_int binSize = 256;
-    const cl_int groupSize = 16;
-    cl_int       subHistgCnt;
-    
-    cl_platform_id   platform = NULL;
-    cl_device_id     device;
-    cl_context       context;
+    cl_int groupSize = 256;
+    cl_int subHistgCnt;
+    cl_device_type dType = CL_DEVICE_TYPE_GPU;
+    cl_platform_id platform = NULL;
+    cl_device_id   device;
+    cl_context     context;
     cl_command_queue commandQueue;
-    cl_mem           imageBuffer;
-    /*Intermediate Image Histogram buffer*/
-    cl_mem     intermediateHistR, intermediateHistG, intermediateHistB; 
-    cl_uint  *midDeviceBinR, *midDeviceBinG, *midDeviceBinB;
+    cl_mem         imageBuffer;
+    cl_mem     intermediateHistR, intermediateHistG, intermediateHistB; /*Intermediate Image Histogram buffer*/
+    cl_uint *  midDeviceBinR, *midDeviceBinG, *midDeviceBinB;
     cl_uint  *deviceBinR,*deviceBinG,*deviceBinB;
     //Read a BMP Image
     Image *image;
@@ -105,7 +79,8 @@ int main(int argc, char *argv[])
         printf("File %s not present...\n", filename.c_str());
         return 0;
     }
-    subHistgCnt  = (image->width * image->height)/(binSize*groupSize);
+
+    subHistgCnt   = (image->width * image->height)/(binSize*groupSize);
     midDeviceBinR = (cl_uint*)malloc(binSize * subHistgCnt * sizeof(cl_uint));
     midDeviceBinG = (cl_uint*)malloc(binSize * subHistgCnt * sizeof(cl_uint));
     midDeviceBinB = (cl_uint*)malloc(binSize * subHistgCnt * sizeof(cl_uint));
@@ -119,7 +94,7 @@ int main(int argc, char *argv[])
     LOG_OCL_ERROR(status, "clGetPlatformIDs Failed." );
 
     //Get the first available device 
-    status = clGetDeviceIDs (platform, DEVICE_TYPE, 1, &device, NULL);
+    status = clGetDeviceIDs (platform, dType, 1, &device, NULL);
     LOG_OCL_ERROR(status, "clGetDeviceIDs Failed." );
     
     //Create an execution context for the selected platform and device. 
@@ -131,7 +106,7 @@ int main(int argc, char *argv[])
     };
     context = clCreateContextFromType(
         cps,
-        DEVICE_TYPE,
+        dType,
         NULL,
         NULL,
         &status);
@@ -143,7 +118,6 @@ int main(int argc, char *argv[])
                                         0,
                                         &status);
     LOG_OCL_ERROR(status, "clCreateCommandQueue Failed." );
-
 #if !defined(USE_HOST_MEMORY)
     //Create OpenCL device input buffer
     imageBuffer = clCreateBuffer(
@@ -166,6 +140,8 @@ int main(int argc, char *argv[])
                                   NULL,
                                   &writeEvt);
     LOG_OCL_ERROR(status, "clEnqueueWriteBuffer Failed while writing the image data." );
+    status = clFinish(commandQueue);
+    LOG_OCL_ERROR(status, "clFinish Failed while writing the image data." );
 #else
     //Create OpenCL device input buffer
     imageBuffer = clCreateBuffer(
@@ -176,8 +152,7 @@ int main(int argc, char *argv[])
         &status); 
     LOG_OCL_ERROR(status, "clCreateBuffer Failed while creating the image buffer." );
 #endif
-    status = clFinish(commandQueue);
-    LOG_OCL_ERROR(status, "clFinish Failed while writing the image data." );
+
     
     //Create OpenCL device output buffer
     intermediateHistR = clCreateBuffer(
@@ -211,21 +186,26 @@ int main(int argc, char *argv[])
 
     // Build the program
     status = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
+    LOG_OCL_ERROR(status, "clBuildProgram Failed" );
     if(status != CL_SUCCESS)
-        LOG_OCL_COMPILER_ERROR(program, device);
+    {
+        if(status == CL_BUILD_PROGRAM_FAILURE)
+            LOG_OCL_COMPILER_ERROR(program, device);
+        LOG_OCL_ERROR(status, "clBuildProgram Failed" );
+    }
+
 
     // Create the OpenCL kernel
     cl_kernel kernel = clCreateKernel(program, "histogram_kernel", &status);
     LOG_OCL_ERROR(status, "clCreateKernel Failed." );
     // Set the arguments of the kernel
-    status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&imageBuffer); 
-    status |= clSetKernelArg(kernel, 1, 3 * groupSize * binSize * sizeof(cl_uchar), NULL); 
-    status |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&intermediateHistR);
-    status |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&intermediateHistG);
-    status |= clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&intermediateHistB);
+    status =  clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&imageBuffer); 
+    status |= clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&intermediateHistR);
+    status |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&intermediateHistG);
+    status |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&intermediateHistB);
     LOG_OCL_ERROR(status, "clSetKernelArg Failed." );
     // Execute the OpenCL kernel on the list
-    cl_event ndrEvt;
+    cl_event ndRangeEvt;
     size_t globalThreads = (image->width * image->height) / (binSize*groupSize) * groupSize;
     size_t localThreads = groupSize;
     status = clEnqueueNDRangeKernel(
@@ -237,7 +217,7 @@ int main(int argc, char *argv[])
         &localThreads,
         0,
         NULL,
-        &ndrEvt);
+        &ndRangeEvt);
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel Failed." );
 
     status = clFinish(commandQueue);
@@ -286,7 +266,7 @@ int main(int argc, char *argv[])
     
     status = clWaitForEvents(3, readEvt);
     //status = clFinish(commandQueue);
-    LOG_OCL_ERROR(status, "clWaitForEvents for readEvt failed." );
+    LOG_OCL_ERROR(status, "clWaitForEvents for readEvt." );
 
     // Calculate final histogram bin 
     for(int i = 0; i < subHistgCnt; ++i)
