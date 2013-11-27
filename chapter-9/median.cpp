@@ -1,4 +1,3 @@
-#pragma	once
 #include "median.h"
 #include "median_kernel.h"
 #include <math.h>
@@ -8,7 +7,7 @@ using std::cin;
 using std::endl;
 
 
-ImageFilter::ImageFilter(string &_filename)
+ImageFilter::ImageFilter(const string &_filename)
 {
 
     cout <<   "\n/*********************************************/ " << "\n";
@@ -73,7 +72,7 @@ void ImageFilter::cleanup()
     cout << "Cleaned up!\n";
 }
 
-void ImageFilter::init_OpenCL( )
+void ImageFilter::init_GPU_OpenCL( )
 {
     //Allocate GPU output image memory
     GPU_output = NULL;
@@ -248,7 +247,7 @@ int main(int argc, char* argv[])
     unsigned int num_of_frames = 0;
     try
     {
-        img_filter->init_OpenCL();
+        img_filter->init_GPU_OpenCL();
         img_filter->start_GPU_Timer();
         img_filter->run_GPU();
         img_filter->stop_GPU_Timer();

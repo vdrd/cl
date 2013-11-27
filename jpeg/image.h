@@ -58,7 +58,7 @@ public:
     int    mcuHeight;
 
 public:
-    int open(char *inputFile);
+    int open(const char *inputFile);
     void close();
     static unsigned char getNextByte();
     static unsigned short int getNext2Bytes();

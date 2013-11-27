@@ -1,4 +1,3 @@
-#pragma	once
 #include "sobel.h"
 #include "sobel_kernel.h"
 #include <math.h>
@@ -8,7 +7,7 @@ using std::cin;
 using std::endl;
 
 
-ImageFilter::ImageFilter(string &_filename)
+ImageFilter::ImageFilter(const string &_filename)
 {
 
 	cout <<   "\n/*********************************************/ " << "\n";

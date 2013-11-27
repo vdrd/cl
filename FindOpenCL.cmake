@@ -22,12 +22,21 @@ SET (OPENCL_VERSION_MAJOR 1)
 SET (OPENCL_VERSION_MINOR 1)
 SET (OPENCL_VERSION_PATCH 0)
 
-option( BUILD_AMD_OPENCL   "Create Build for AMD OpenCL implementation" OFF )
+option( BUILD_64 "Linux only 64 bit build" ON)		
+option( BUILD_AMD_OPENCL   "Create Build for AMD OpenCL implementation" ON )
 option( BUILD_NV_OPENCL    "Create Build for NV OpenCL implementation" OFF )
 option( BUILD_INTEL_OPENCL "Create Build for INTEL OpenCL implementation" OFF )
 option( BUILD_APPLE_OPENCL "Create Build for INTEL OpenCL implementation" OFF )
 
- 
+if( BUILD_64 )
+    set_property( GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE )
+    message( STATUS "64bit build - FIND_LIBRARY_USE_LIB64_PATHS TRUE" )
+else()
+    set_property( GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS FALSE )
+    message( STATUS "32bit build - FIND_LIBRARY_USE_LIB64_PATHS FALSE" )
+endif()
+
+
 IF(${BUILD_AMD_OPENCL} STREQUAL ON)
         IF ( DEFINED ENV{AMDAPPSDKROOT} ) 
                 message (STATUS "AMDAPPSDKROOT environment variable is set")
@@ -111,9 +120,41 @@ ELSEIF (WIN32)
 ELSE (APPLE)
 
         # Unix style platforms
-        FIND_LIBRARY(OPENCL_LIBRARIES OpenCL
-                PATHS ENV LD_LIBRARY_PATH ENV OpenCL_LIBPATH
-        )
+	get_property( LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS )
+
+        IF(${BUILD_AMD_OPENCL} STREQUAL ON)
+            SET(OPENCL_ROOT "$ENV{AMDAPPSDKROOT}/")
+        ELSEIF ( ${BUILD_NV_OPENCL} STREQUAL ON ) 
+            SET(OPENCL_ROOT "$ENV{NVSDKCOMPUTE_ROOT}/")
+        ELSE ( ${BUILD_AMD_OPENCL} STREQUAL ON ) 
+            SET(OPENCL_ROOT "$ENV{INTELOCLSDKROOT}/")
+        ENDIF( ${BUILD_AMD_OPENCL} STREQUAL ON)
+if( LIB64 )
+	message("building 64-bit lib")
+	FIND_LIBRARY( OPENCL_LIBRARIES
+		OpenCL
+		HINTS
+			${OPENCL_ROOT}/lib
+			$ENV{OPENCL_ROOT}/lib
+		DOC "OpenCL dynamic library path"
+		PATH_SUFFIXES x86_64 x64
+	)
+else( )
+	message("building 32-bit lib")
+	FIND_LIBRARY( OPENCL_LIBRARIES
+		OpenCL
+		HINTS
+			${OPENCL_ROOT}/lib
+			$ENV{OPENCL_ROOT}/lib
+		DOC "OpenCL dynamic library path"
+		PATH_SUFFIXES x86
+	)
+endif( )
+
+
+        #FIND_LIBRARY(OPENCL_LIBRARIES OpenCL
+        #        PATHS ENV LD_LIBRARY_PATH ENV OpenCL_LIBPATH
+        #)
 
         GET_FILENAME_COMPONENT(OPENCL_LIB_DIR ${OPENCL_LIBRARIES} PATH)
         GET_FILENAME_COMPONENT(_OPENCL_INC_CAND ${OPENCL_LIB_DIR}/../../include ABSOLUTE)

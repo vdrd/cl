@@ -185,7 +185,7 @@ public:
      */
     int verifyResults();
 
-    int decodeImage(char *fName);
+    int decodeImage(const char *fName);
 };
 
 

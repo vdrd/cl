@@ -1,4 +1,4 @@
-#pragma	once
+//#pragma	once
 #include "gaussian.h"
 #include "gaussian_kernel.h"
 #include <math.h>
@@ -8,7 +8,7 @@ using std::cin;
 using std::endl;
 
 
-ImageFilter::ImageFilter(string &_filename)
+ImageFilter::ImageFilter(const string &_filename)
 {
 
     cout <<   "\n/*********************************************/ " << "\n";
@@ -243,7 +243,7 @@ void ImageFilter::run_gaussian_filter_kernel()
 
 int main(int argc, char* argv[])
 {
-    ImageFilter*	img_filter = new ImageFilter(string(argv[1]));
+    ImageFilter*	img_filter = new ImageFilter(std::string(argv[1]));
     unsigned int num_of_frames = 0;
     try
     {

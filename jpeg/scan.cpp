@@ -59,7 +59,11 @@ int writeBmpFile(const char *fName, unsigned char *pImageBuffer, unsigned long i
 
 
 	FILE* fp;
-	fopen_s(&fp,fName,"wb");
+#ifdef WIN32
+    fopen_s(&fp, fName, "wb");
+#else
+    fp = fopen(fName, "wb");
+#endif
 
 	// write the bitmap file
 	

@@ -868,7 +868,7 @@ JPEG_Decoder::cleanup()
 }
 
 int 
-JPEG_Decoder::decodeImage(char *fileName)
+JPEG_Decoder::decodeImage(const char *fileName)
 {
     Image.open(fileName); 
     
@@ -898,7 +898,7 @@ int
 main(int argc, char * argv[])
 {
     //char *inputFile = "lena.jpg";
-    char *inputFile = "lena.jpg";
+    const char *inputFile = "lena.jpg";
 
     JPEG_Decoder  clJPEG_Decoder("OpenCL JPEG Decoder");
     clJPEG_Decoder.initialize();

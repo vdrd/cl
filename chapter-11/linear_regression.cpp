@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <iostream>
 #ifdef __APPLE__
 #include <OpenCL/cl.h>

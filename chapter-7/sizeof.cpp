@@ -9,11 +9,17 @@
 #endif
 #include <ocl_macros.h>
 
+#ifdef WIN32
+#define ALIGN(X) __declspec( align( (X) ) )
+#else
+#define ALIGN(X) __attribute__( (aligned( (X) ) ) )
+#endif
+
 #define VECTOR_SIZE 1024
 typedef struct
 {
-    cl_float8 __declspec(align(32)) y;
-    cl_float3 __declspec(align(16)) x;
+    cl_float8 ALIGN(32) y;
+    cl_float3 ALIGN(16) x;
 } OpenCLStruct;
 
 //OpenCL kernel which is run for every work item created.
@@ -31,7 +37,7 @@ const char *sizeof_kernel =
 
 int main(void) {
     OpenCLStruct* oclStruct = (OpenCLStruct*)malloc(sizeof(OpenCLStruct)*VECTOR_SIZE);
-    printf("The size of the OpenCLStruct provided by the host compiler is = %d bytes\n",sizeof(OpenCLStruct) );
+    printf("The size of the OpenCLStruct provided by the host compiler is = %ld bytes\n",sizeof(OpenCLStruct) );
 
     // Get platform and device information
     cl_platform_id * platforms = NULL;

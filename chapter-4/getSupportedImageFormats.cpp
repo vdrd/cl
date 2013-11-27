@@ -5,26 +5,15 @@
 #else
 #include <CL/cl.h>
 #endif
+#include <ocl_macros.h>
 
 #define VECTOR_SIZE 1024
-typedef struct
-{
-    cl_float8 __declspec(align(32)) y;
-    cl_float3 __declspec(align(16)) x;
-} OpenCLStruct;
+#ifdef WIN32
+#define ALIGN(X) __declspec( align( (X) ) )
+#else
+#define ALIGN(X) __attribute__( (aligned( (X) ) ) )
+#endif
 
-//OpenCL kernel which is run for every work item created.
-const char *sizeof_kernel =
-"typedef struct                             \n"
-"{                                          \n"
-"   float8 y;                               \n"
-"   float3 x;                               \n"
-"} OpenCLStruct;                            \n"
-"__kernel                                   \n"
-"void sizeof_kernel(  )                     \n"
-"{                                          \n"
-"    printf(\"The size of the OpenCLStruct provided by the OpenCL compiler is = %d bytes.\\n \",sizeof(OpenCLStruct));   \n"
-"}                                          \n";
 const char *    getStrChannelOrder(cl_channel_order channel_order)
 {
     const char *returnStr;

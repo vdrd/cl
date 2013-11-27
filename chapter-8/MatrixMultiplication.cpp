@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
+#include <string.h>
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
@@ -589,7 +590,7 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 //    global_size[0] = MATRIX_HEIGHT;
 //    local_size[0] =  128;//for size of 512
 //#endif
-    printf("Running for GLobal = %d %d, Local = %d %d\n",global_size[0], global_size[1], local_size[0], local_size[1]);
+    printf("Running for GLobal = %ld %ld, Local = %ld %ld\n",global_size[0], global_size[1], local_size[0], local_size[1]);
 //#if defined( ENABLE_ROW_PER_WI ) || defined(ENABLE_ROW_PER_WI_A_PRIVATE) || defined(ENABLE_ROW_PER_WI_A_PRIVATE_B_LOCAL) ||defined (ENABLE_ROW_PER_WI_A_PRIVATE) 
 //    clStatus = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
 //            global_size, local_size, 0, NULL, &events);
@@ -690,7 +691,7 @@ bool resultIsCorrect(float* pA,float* pB,float* pCTest, int dim)
         printf (".");
     }
     int errorCount = 10;
-    for(long long int i=0; i<arrayLength && errorCount;++i)
+    for(int i=0; i<arrayLength && errorCount;++i)
     {
         if(pGoldenValue[i] != pCTest[i] )
         {

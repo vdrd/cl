@@ -26,7 +26,7 @@ class ImageFilter
 {
 public:
     //Constructors
-    ImageFilter(string &filename);
+    ImageFilter(const string &filename);
     //Destructors
 	~ImageFilter(){cleanup();}
 	void	cleanup();		// cleanup host read image and free image buffers

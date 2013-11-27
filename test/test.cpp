@@ -28,7 +28,7 @@ const char *sizeof_kernel =
 
 int main(void) {
     OpenCLStruct* oclStruct = (OpenCLStruct*)malloc(sizeof(OpenCLStruct)*VECTOR_SIZE);
-    printf("The size of the OpenCLStruct provided by the host compiler is = %d bytes\n",sizeof(OpenCLStruct) );
+    printf("The size of the OpenCLStruct provided by the host compiler is = %ld bytes\n",sizeof(OpenCLStruct) );
 
     // Get platform and device information
     cl_platform_id * platforms = NULL;

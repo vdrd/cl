@@ -25,7 +25,7 @@ class ImageFilter
 {
 public:
     //Constructors
-    ImageFilter(string &filename);
+    ImageFilter(const string &filename);
     //Destructors
 	~ImageFilter(){cleanup();}
 	void	cleanup();		// cleanup host read image and free image buffers
@@ -45,9 +45,9 @@ public:
 	void	read_GPU_filtered_image();
     void    load_GPU_raw_image();         
     
-	void	start_GPU_Timer()		{timer_GPU.Reset(); timer_GPU.Start();}
-	void	stop_GPU_Timer()		{timer_GPU.Stop();}
-	void	print_GPU_Timer();
+    void	start_GPU_Timer()		{timer_GPU.Reset(); timer_GPU.Start();}
+    void	stop_GPU_Timer()		{timer_GPU.Stop();}
+    void	print_GPU_Timer();
 
     void    load_bmp_image( );
     void    write_bmp_image( );
@@ -61,16 +61,16 @@ private:
     cl_command_queue            commandQueue;
     cl_program                  program;
     cl_kernel                   gd_kernel;
-	size_t						gwsize[2];					// OpenCL global work size
-	size_t						lwsize[2];					// OpenCL local work size
+    size_t						gwsize[2];// OpenCL global work size
+    size_t						lwsize[2];// OpenCL local work size
     cl_mem                      ocl_filter, ocl_raw, ocl_filtered_image;
     
     std::string                 filename;
     int windowSize;
-	float*      				host_image;					//load image data sequence 
-	float						*GPU_raw,	*GPU_filtered_image;
+    float*      				host_image;					//load image data sequence 
+    float						*GPU_raw,	*GPU_filtered_image;
     float                       filter[WINDOW_SIZE*WINDOW_SIZE];
-	float*				        GPU_output;
-	Timer				        timer_GPU;
+    float*				        GPU_output;
+    Timer				        timer_GPU;
 };
 #endif

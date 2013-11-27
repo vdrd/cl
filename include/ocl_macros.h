@@ -16,8 +16,8 @@
                                               &buildLogSize);                            \
             if(logStatus != CL_SUCCESS)                                                  \
             {                                                                            \
-                printf( "Error # %d logStatus ");                                        \
-                printf( ":: clGetProgramBuildInfo<CL_PROGRAM_BUILD_LOG> failed.", logStatus);          \
+                printf( "Error # %d logStatus", logStatus );                             \
+                printf( ":: clGetProgramBuildInfo<CL_PROGRAM_BUILD_LOG> failed.");       \
                 exit(1);                                                                 \
             }                                                                            \
                                                                                          \
@@ -44,7 +44,7 @@
                                                                                          \
             printf(" \n\t\t\tBUILD LOG\n");                                              \
             printf(" ************************************************\n");               \
-            printf(buildLog);                                                            \
+            printf("%s",buildLog);                                                            \
             printf(" ************************************************\n");               \
             free(buildLog);                                                              \
             exit(1);                                                              \

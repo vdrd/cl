@@ -1,6 +1,11 @@
 #ifndef IMAGE_CPP
 #define IMAGE_CPP
+#ifdef WIN32
 #include <io.h>
+#else
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 #include "image.h"
 #include <stdio.h>
 #include <iostream>
@@ -13,11 +18,15 @@ int writeBmpFile(const char *fName, unsigned char *pImageBuffer, unsigned long i
 Fw64u FileLength(int fd)
 {
     Fw64u size =0;
+#ifdef WIN32
     size = _lseek(fd,0,SEEK_END);
+#else
+    size = lseek(fd,0,SEEK_END);
+#endif
     return size;
 }
 
-int image::open(char *inputFile)
+int image::open(const char *inputFile)
 {
     //int errNo;
     int fd;
@@ -26,7 +35,11 @@ int image::open(char *inputFile)
     //*image = (Image *)calloc(1,sizeof(Image));
     //(*image)->filename = filename.c_str();
 
+#ifdef WIN32
     fopen_s(&fp, inputFile, "rb");
+#else
+    fp = fopen(inputFile, "rb");
+#endif
 
     //fp = fopen(inputFile, "rb");
     if (fp == NULL)

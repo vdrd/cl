@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <iostream>
 #include <fstream>
 #ifdef __APPLE__
@@ -160,7 +161,7 @@ int main(void) {
     point *pPoints = (point*)malloc(sizeof(point)*NUM_OF_POINTS);
     readKNNData(pPoints, NUM_OF_POINTS);
 
-    printf("Host sizeof (point) = %d\n", sizeof(point) );
+    printf("Host sizeof (point) = %ld\n", sizeof(point) );
     // Get platform and device information
     cl_platform_id * platforms = NULL;
     //Set up the Platform
