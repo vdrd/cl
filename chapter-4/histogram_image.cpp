@@ -158,6 +158,7 @@ int main(int argc, char *argv[])
     cl_image_format image_format;
     image_format.image_channel_data_type = CL_UNSIGNED_INT8;
     image_format.image_channel_order = CL_RGBA;
+#ifdef OPENCL_1_2
     cl_image_desc image_desc;
     image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
     image_desc.image_width = image->width;
@@ -169,11 +170,21 @@ int main(int argc, char *argv[])
     image_desc.num_mip_levels = 0;
     image_desc.num_samples = 0;
     image_desc.buffer= NULL;
+#endif
+
+#ifdef OPENCL_1_2
     cl_mem clImage = clCreateImage(
+#else
+    cl_mem clImage = clCreateImage2D(
+#endif
         context,
         CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR,
         &image_format,
+#ifdef OPENCL_1_2
         &image_desc,
+#else
+        image->width, image->height, image->width *4,
+#endif
         image->pixels, //R,G,B,A, R,G,B,A, R,G,B,A
         &status); 
     LOG_OCL_ERROR(status, "clCreateImage Failed" );

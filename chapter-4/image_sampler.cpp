@@ -112,6 +112,7 @@ int main()
     //We create a 5 X 5 2D image 
     image_width  = 5; 
     image_height = 5;
+#ifdef OPENCL_1_2
     cl_image_desc image_desc;
     image_desc.image_type   = CL_MEM_OBJECT_IMAGE2D;
     image_desc.image_width  = image_width;
@@ -123,7 +124,7 @@ int main()
     image_desc.num_mip_levels = 0;
     image_desc.num_samples    = 0;
     image_desc.buffer         = NULL;
-    
+#endif    
     /* Create output buffer */
     out = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float4)*pixels_read, NULL, &status);
     LOG_OCL_ERROR(status, "clCreateBuffer Failed" );
@@ -139,10 +140,24 @@ int main()
         10, 20, 50, 40, 50
     };
     memcpy(data, pixels, image_width*image_height*sizeof(float));
-    clImage = clCreateImage(context, CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR, &image_format, &image_desc, pixels, &status);
+#ifdef OPENCL_1_2
+    clImage = clCreateImage(context,
+#else
+    clImage = clCreateImage2D(context,
+#endif
+                            CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR, 
+                            &image_format, 
+#ifdef OPENCL_1_2
+                            &image_desc,
+#else
+                            image_width, image_height, image_width * sizeof(float),
+#endif
+                            pixels, 
+                            &status);
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
 
-    /* If the image was not created using CL_MEM_USE_HOST_PTR, then you can write the image data to the device using the 
+    /* If the image was not created using CL_MEM_USE_HOST_PTR, 
+       then you can write the image data to the device using the 
        clEnqueueWriteImage function. */
     //status = clEnqueueWriteImage(command_queue, clImage, CL_TRUE, origin, region, 5*sizeof(float), 25*sizeof(float), data, 0, NULL, NULL);
     //LOG_OCL_ERROR(status, "clCreateBuffer Failed" );

@@ -162,10 +162,11 @@ cl_int ImageFilter::setupOCLbuffers()
     cl_int status;
 	//Intermediate reusable cl buffers
 	cl_image_format image_format;
-    cl_image_desc image_desc;
 	image_format.image_channel_data_type = CL_FLOAT;
 	image_format.image_channel_order = CL_R;
 
+#ifdef OPENCL_1_2
+    cl_image_desc image_desc;
 	image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
 	image_desc.image_width = image->width;
 	image_desc.image_height = image->height;
@@ -178,26 +179,42 @@ cl_int ImageFilter::setupOCLbuffers()
 	image_desc.num_mip_levels = 0;
 	image_desc.num_samples = 0;
 	image_desc.buffer= NULL;
+#endif
+#ifdef OPENCL_1_2
     ocl_raw = clCreateImage(
+#else
+    ocl_raw = clCreateImage2D(
+#endif
         context,
         CL_MEM_READ_ONLY,
         &image_format,
+#ifdef OPENCL_1_2
         &image_desc,
-		NULL,
+#else
+        image->width, image->height, 0, 	
+#endif
+        NULL,
         &status);
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
 
+#ifdef OPENCL_1_2
     //Note when the host_ptr is NULL row_pitch and slice_pith should be set to 0;
     //Otherwise you will get a CL_INVALID_IMAGE_DESCRIPTOR error
 	image_desc.image_row_pitch = 0;
 	image_desc.image_slice_pitch = 0;
-
     ocl_filtered_image = clCreateImage(
+#else
+    ocl_filtered_image = clCreateImage2D(
+#endif
         context,
         CL_MEM_WRITE_ONLY,
         &image_format,
+#ifdef OPENCL_1_2
         &image_desc,
-		NULL,
+#else
+        image->width, image->height, 0, 	
+#endif
+        NULL,
         &status);
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
 

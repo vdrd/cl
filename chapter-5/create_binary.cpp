@@ -67,9 +67,11 @@ void createBinary(const char * kernelCode, cl_context context)
     LOG_OCL_ERROR(clStatus, "clGetProgramInfo Failed while querying CL_PROGRAM_BINARIES" );
 
     //Get the name of the kernel
+#ifdef OPENCL_1_2
     clStatus = clGetProgramInfo(program, CL_PROGRAM_KERNEL_NAMES,
                                 sizeof(kernelName), &kernelName,
                                 &bytes_read); 
+#endif
     LOG_OCL_ERROR(clStatus, "clGetProgramInfo Failed while querying CL_PROGRAM_KERNEL_NAMES" );
     std::cout << "Kernel name is \"" << kernelName << "\"" << std::endl;
 
@@ -87,7 +89,11 @@ void createBinary(const char * kernelCode, cl_context context)
 
         if(device_type == CL_DEVICE_TYPE_CPU)
         {
+#ifdef OPENCL_1_2
             std::string kernelStr(kernelName);
+#else 
+            std::string kernelStr("saxpy_kernel");
+#endif
             std::string kernelExtn("_binary_cpu.clbin");
             kernelStr += kernelExtn;
             std::cout << "Writing File for kernel \"" << kernelName << "\" with CPU device Type" << std::endl;
@@ -98,7 +104,11 @@ void createBinary(const char * kernelCode, cl_context context)
         }
         else if(device_type == CL_DEVICE_TYPE_GPU)
         {
+#ifdef OPENCL_1_2
             std::string kernelStr(kernelName);
+#else 
+            std::string kernelStr("saxpy_kernel");
+#endif
             std::string kernelExtn("_binary_gpu.clbin");
             kernelStr += kernelExtn;
             std::cout << "Writing File for kernel \"" << kernelName << "\" with GPU device Type" << std::endl;
