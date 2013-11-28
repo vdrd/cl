@@ -23,17 +23,32 @@ typedef struct
 } OpenCLStruct;
 
 //OpenCL kernel which is run for every work item created.
+// Nvidia OpenCL implementation does not provide printf support hence 
+// we create a cl_mem object clSizeMem and write the data to this buffer in 
+// inside the kernel. Note that the host side data structure needs explicit 
+// alignment of the data buffer
+
 const char *sizeof_kernel =
-"typedef struct                             \n"
-"{                                          \n"
-"   float8 y;                               \n"
-"   float3 x;                               \n"
-"} OpenCLStruct;                            \n"
-"__kernel                                   \n"
-"void sizeof_kernel(  )                     \n"
-"{                                          \n"
+"typedef struct                                     \n"
+"{                                                  \n"
+"   float8 y;                                       \n"
+"   float3 x;                                       \n"
+"} OpenCLStruct;                                    \n"
+"__kernel                                           \n"
+"void sizeof_kernel(                                \n"
+"#ifdef NV_OCL                                      \n"
+"   __global int *size                              \n"
+"#endif                                             \n"
+"                  )                                \n"
+"{                                                  \n"
+"#ifdef NV_OCL                                      \n"
+"    size[get_global_id(0)] = sizeof(OpenCLStruct); \n"
+"#else                                              \n"
 "    printf(\"The size of the OpenCLStruct provided by the OpenCL compiler is = %d bytes.\\n \",sizeof(OpenCLStruct));   \n"
-"}                                          \n";
+"#endif                                             \n"
+"}                                                  \n";
+
+#define NV_OCL
 
 int main(void) {
     OpenCLStruct* oclStruct = (OpenCLStruct*)malloc(sizeof(OpenCLStruct)*VECTOR_SIZE);
@@ -83,13 +98,23 @@ int main(void) {
     LOG_OCL_ERROR(clStatus, "clCreateProgramWithSource Failed" );
 
     // Build the program
+#ifdef NV_OCL
+    clStatus = clBuildProgram(program, 1, device_list, "-DNV_OCL", NULL, NULL);
+#else
     clStatus = clBuildProgram(program, 1, device_list, NULL, NULL, NULL);
+#endif
     if(clStatus != CL_SUCCESS)
         LOG_OCL_COMPILER_ERROR(program, device_list[0]);
 
     // Create the OpenCL kernel
     cl_kernel kernel = clCreateKernel(program, "sizeof_kernel", &clStatus);
     LOG_OCL_ERROR(clStatus, "clCreateKernel Failed" );
+
+#ifdef NV_OCL
+    cl_mem clSizeMem = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+                                    sizeof(int), NULL, &clStatus);
+    clStatus = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)(&clSizeMem));
+#endif
 
     // Execute the OpenCL kernel. Lauch only one work item to see what is the sizeof OpenCLStruct
     size_t global_size = 1; // Process the entire lists
@@ -102,6 +127,13 @@ int main(void) {
     clStatus = clFinish(command_queue);
     LOG_OCL_ERROR(clStatus, "clFinish Failed" );
 
+#ifdef NV_OCL
+    int size = 0;
+    clStatus = clEnqueueReadBuffer(command_queue, clSizeMem, CL_TRUE, 0,
+                                   sizeof(int), &size, 0, NULL, NULL);
+    LOG_OCL_ERROR(clStatus, "clEnqueueReadBuffer Failed..." );
+    printf("The size of the OpenCLStruct provided by the OpenCL compiler is = %d bytes.\n ",size ); 
+#endif
     // Finally release all OpenCL allocated objects and host buffers.
     clStatus = clReleaseKernel(kernel);
     clStatus = clReleaseProgram(program);
