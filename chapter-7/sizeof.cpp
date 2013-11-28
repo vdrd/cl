@@ -10,7 +10,7 @@
 #include <ocl_macros.h>
 
 #ifdef WIN32
-#define ALIGN(X) __declspec( align( (X) ) )
+#define ALIGN(X) __declspec( align( X ) )
 #else
 #define ALIGN(X) __attribute__( (aligned( (X) ) ) )
 #endif

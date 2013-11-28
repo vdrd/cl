@@ -41,7 +41,7 @@ public:
     void    setup_filter( );
 
 	void	run_GPU();
-    void    run_gaussian_filter_kernel();
+    void    run_median_filter_kernel();
     //Read and write image uses bmp_image.h
 	void	read_GPU_filtered_image();
     void    load_GPU_raw_image();         

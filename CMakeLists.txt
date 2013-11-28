@@ -6,6 +6,8 @@ project( OpenCL_By_Example )
 
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} )
 
+set( CMAKE_CXX_FLAGS "-DWIN32" )
+set( CMAKE_C_FLAGS "-DWIN32" )
 
 find_package( OpenCL REQUIRED )
 include_directories( ${OPENCL_INCLUDE_DIRS} include )
