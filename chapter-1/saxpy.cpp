@@ -36,7 +36,7 @@ const char *saxpy_kernel =
 "{                                          \n"
 "    //Get the index of the work-item       \n"
 "    int index = get_global_id(0);          \n"
-"    C[index] = alpha* A[index] + B[index] \n"
+"    C[index] = alpha* A[index] + B[index]; \n"
 "}                                          \n";
 
 int main(void) {

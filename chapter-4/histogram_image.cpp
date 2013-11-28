@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     cl_uint *deviceBinR,*deviceBinG,*deviceBinB;
     //Read a BMP Image
     Image *image;
-    std::string filename = "histogram.bmp";
+    std::string filename = "sample_color.bmp";
     ReadBMPImage(filename, &image);
     if(image == NULL)
         return 0;
