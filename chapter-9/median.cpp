@@ -46,7 +46,7 @@ void ImageFilter::read_GPU_filtered_image()
     origin[0] = origin[1] = origin[2] = 0;
     region[0] = image->width; region[1] = image->height; region[2] = 1;
     status = clEnqueueReadImage(commandQueue, ocl_filtered_image, CL_TRUE, origin, region, 0, 0, GPU_output, 0, NULL, NULL);
-    LOG_OCL_ERROR(status, "Error # clEnqueueReadImage" );
+    LOG_OCL_ERROR(status, "clEnqueueReadImage failed" );
 }
 
 void ImageFilter::load_GPU_raw_image()
@@ -57,7 +57,7 @@ void ImageFilter::load_GPU_raw_image()
     origin[0] = origin[1] = origin[2] = 0;
     region[0] = image->width; region[1] = image->height; region[2] = 1;
     status = clEnqueueWriteImage(commandQueue, ocl_raw, CL_TRUE, origin, region, 0, 0, image->pixels, 0, NULL, NULL);
-    LOG_OCL_ERROR(status, "Error # clEnqueueReadImage" );
+    LOG_OCL_ERROR(status, "clEnqueueWriteImage failed" );
 }
 
 void ImageFilter::print_GPU_Timer()
@@ -229,11 +229,11 @@ cl_int ImageFilter::setupOCLbuffers()
 void ImageFilter::run_GPU()
 {
     load_GPU_raw_image();
-    run_gaussian_filter_kernel();
+    run_median_filter_kernel();
     read_GPU_filtered_image();
 }
 
-void ImageFilter::run_gaussian_filter_kernel()
+void ImageFilter::run_median_filter_kernel()
 {
     cl_event	wlist[2];
     cl_int status;
@@ -259,7 +259,7 @@ void ImageFilter::run_gaussian_filter_kernel()
 
 int main(int argc, char* argv[])
 {
-    ImageFilter*	img_filter;
+    ImageFilter*	img_filter = NULL;
     img_filter = new ImageFilter(string(argv[1]));
     unsigned int num_of_frames = 0;
     try

@@ -47,7 +47,7 @@ void ImageFilter::read_GPU_filtered_image()
     origin[0] = origin[1] = origin[2] = 0;
     region[0] = image->width; region[1] = image->height; region[2] = 1;
     status = clEnqueueReadImage(commandQueue, ocl_filtered_image, CL_TRUE, origin, region, 0, 0, GPU_output, 0, NULL, NULL);
-    LOG_OCL_ERROR(status, "Error # clEnqueueReadImage" );
+    LOG_OCL_ERROR(status, "clEnqueueReadImage failed" );
 }
 
 void ImageFilter::load_GPU_raw_image()
@@ -58,7 +58,7 @@ void ImageFilter::load_GPU_raw_image()
     origin[0] = origin[1] = origin[2] = 0;
     region[0] = image->width; region[1] = image->height; region[2] = 1;
     status = clEnqueueWriteImage(commandQueue, ocl_raw, CL_TRUE, origin, region, 0, 0, image->pixels, 0, NULL, NULL);
-    LOG_OCL_ERROR(status, "Error # clEnqueueReadImage" );
+    LOG_OCL_ERROR(status, "clEnqueueWriteImage failed" );
 }
 
 void ImageFilter::print_GPU_Timer()
@@ -78,7 +78,7 @@ void ImageFilter::init_GPU_OpenCL( )
     //Allocate GPU output image memory
     GPU_output = NULL;
     GPU_output = (float*) calloc(1, image->height*image->width*sizeof(float) );
-
+    deviceType = CL_DEVICE_TYPE_GPU;
     setupOCLPlatform();
     setupOCLProgram();
     setupOCLkernels();
