@@ -17,16 +17,16 @@
 
 FIND_PACKAGE(PackageHandleStandardArgs)
 
-SET (OPENCL_VERSION_STRING "1.1.0")
+SET (OPENCL_VERSION_STRING "1.2.0")
 SET (OPENCL_VERSION_MAJOR 1)
-SET (OPENCL_VERSION_MINOR 1)
+SET (OPENCL_VERSION_MINOR 2)
 SET (OPENCL_VERSION_PATCH 0)
 
 option( BUILD_64 "Linux only 64 bit build" ON)		
 option( BUILD_AMD_OPENCL   "Create Build for AMD OpenCL implementation" ON )
 option( BUILD_NV_OPENCL    "Create Build for NV OpenCL implementation" OFF )
 option( BUILD_INTEL_OPENCL "Create Build for INTEL OpenCL implementation" OFF )
-option( BUILD_APPLE_OPENCL "Create Build for INTEL OpenCL implementation" OFF )
+option( BUILD_APPLE_OPENCL "Create Build for APPLE OpenCL implementation" OFF )
 
 if( BUILD_64 )
     set_property( GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE )
@@ -129,27 +129,27 @@ ELSE (APPLE)
         ELSE ( ${BUILD_AMD_OPENCL} STREQUAL ON ) 
             SET(OPENCL_ROOT "$ENV{INTELOCLSDKROOT}/")
         ENDIF( ${BUILD_AMD_OPENCL} STREQUAL ON)
-if( LIB64 )
-	message("building 64-bit lib")
-	FIND_LIBRARY( OPENCL_LIBRARIES
+        IF( LIB64 )
+	    message("building 64-bit lib")
+	    FIND_LIBRARY( OPENCL_LIBRARIES
 		OpenCL
 		HINTS
 			${OPENCL_ROOT}/lib
 			$ENV{OPENCL_ROOT}/lib
 		DOC "OpenCL dynamic library path"
 		PATH_SUFFIXES x86_64 x64
-	)
-else( )
-	message("building 32-bit lib")
-	FIND_LIBRARY( OPENCL_LIBRARIES
+	    )
+        ELSE( )
+	    message("building 32-bit lib")
+	    FIND_LIBRARY( OPENCL_LIBRARIES
 		OpenCL
 		HINTS
 			${OPENCL_ROOT}/lib
 			$ENV{OPENCL_ROOT}/lib
 		DOC "OpenCL dynamic library path"
 		PATH_SUFFIXES x86
-	)
-endif( )
+            )
+        ENDIF( )
 
 
         #FIND_LIBRARY(OPENCL_LIBRARIES OpenCL
@@ -162,8 +162,13 @@ endif( )
         # The AMD SDK currently does not place its headers
         # in /usr/include, therefore also search relative
         # to the library
-        FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND} "/usr/local/cuda/include" "/opt/AMDAPP/include" ENV OpenCL_INCPATH)
-        FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${_OPENCL_INC_CAND} "/usr/local/cuda/include" "/opt/AMDAPP/include" ENV OpenCL_INCPATH)
+	IF (${BUILD_AMD_OPENCL} STREQUAL ON)
+            SET(OCL_INSTALL_PATH "/opt/AMDAPP/include")
+	ELSEIF (${BUILD_AMD_OPENCL} STREQUAL ON)
+            SET(OCL_INSTALL_PATH "/usr/local/cuda/include")
+        ENDIF ()
+        FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND} ${OCL_INSTALL_PATH} ENV OpenCL_INCPATH)
+        FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${_OPENCL_INC_CAND} ${OCL_INSTALL_PATH} ENV OpenCL_INCPATH)
 
 ENDIF (APPLE)
 
