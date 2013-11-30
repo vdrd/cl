@@ -2,7 +2,9 @@
 #define OCL_SOBEL_KERNEL_H
 static const char *sobel_kernel =
 "                                                                                                      \n"
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE;         \n"
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE                                      \n"
+"                                     | CLK_ADDRESS_CLAMP_TO_EDGE                                      \n"
+"                                     | CLK_FILTER_NEAREST;                                            \n"
 "                                                                                                      \n"
 "__kernel void sobel_filter_kernel(__read_only image2d_t iimage, __write_only image2d_t oimage,        \n"
 "                                         __global float *filter_x_grad,                               \n"

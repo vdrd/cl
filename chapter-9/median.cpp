@@ -132,7 +132,6 @@ cl_int ImageFilter::setupOCLProgram()
 
     // Build the program
     status = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
-    LOG_OCL_ERROR(status, "clBuildProgram Failed" );
     if(status != CL_SUCCESS)
     {
         if(status == CL_BUILD_PROGRAM_FAILURE)
@@ -259,6 +258,14 @@ void ImageFilter::run_median_filter_kernel()
 
 int main(int argc, char* argv[])
 {
+    if(argc < 2)
+    {
+        std::cout << "Usage: chapter9.median.exe sample.bmp\n";
+        std::cout << "The file sample.bmp is available in the input_images directory. This \n";
+        std::cout << "This should be a grayscale image. and the height and width should be amultiple of 16 pixels\n";
+        return 0;
+    }
+
     ImageFilter*	img_filter = NULL;
     img_filter = new ImageFilter(string(argv[1]));
     unsigned int num_of_frames = 0;

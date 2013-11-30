@@ -2,7 +2,9 @@
 #define OCL_MEDIAN_KERNEL_H
 static const char *median_kernel =
 "                                                                                                      \n"
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE;         \n"
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE                                      \n"
+"                                     | CLK_ADDRESS_CLAMP_TO_EDGE                                      \n"
+"                                     | CLK_FILTER_NEAREST;                                            \n"
 "                                                                                                      \n"
 "__kernel void median_filter_kernel(__read_only image2d_t in_image,                                     \n"
 "                            __write_only image2d_t out_image,                                          \n"

@@ -2,7 +2,7 @@
 #define OCL_GAUSSIAN_KERNEL_H
 static const char *gaussian_kernel =
 "                                                                                                      \n"
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |                                    \n"
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE                                      \n"
 "                                     | CLK_ADDRESS_CLAMP_TO_EDGE                                      \n"
 "                                     | CLK_FILTER_NEAREST;                                            \n"
 "                                                                                                      \n"

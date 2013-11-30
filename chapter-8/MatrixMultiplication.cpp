@@ -514,6 +514,14 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 
 int main(int argc, char** argv)
 {
+    if(argc < 2)
+    {
+        std::cout << "Usage: chapter8.MatrixMultiplication.exe <Matrix Width>\n";
+        std::cout << "The matrix width is equal to the height in this implementation.\n";
+        std::cout << "The width and height should be a multiple of 256.\n";
+        return 0;
+    }
+
     int MATRIX_WIDTH = atoi(argv[1]);
 
     bool verify = true;
@@ -572,7 +580,7 @@ void StartCounter()
     QueryPerformanceCounter(&li);
     CounterStart = li.QuadPart;
 #else
-	PCFreq = CLOCKS_PER_SEC;
-	CounterStart = clock();
+    PCFreq = CLOCKS_PER_SEC;
+    CounterStart = clock();
 #endif
 }

@@ -10,9 +10,9 @@ using std::endl;
 ImageFilter::ImageFilter(const string &_filename)
 {
 
-	cout <<   "\n/*********************************************/ " << "\n";
-	cout <<	    "     Image Filter - Sobel Filter                "   << "\n";
-	cout <<	    "/*********************************************/ " << "\n\n";
+    cout <<   "\n/*********************************************/ " << "\n";
+    cout <<	    "     Image Filter - Sobel Filter                "   << "\n";
+    cout <<	    "/*********************************************/ " << "\n\n";
     host_image = NULL;
     filename = _filename;
     load_bmp_image();
@@ -47,8 +47,8 @@ void ImageFilter::read_GPU_filtered_image()
     size_t origin[3];
     size_t region[3];
     cl_int status = 0;
-	origin[0] = origin[1] = origin[2] = 0;
-	region[0] = image->width; region[1] = image->height; region[2] = 1;
+    origin[0] = origin[1] = origin[2] = 0;
+    region[0] = image->width; region[1] = image->height; region[2] = 1;
     status = clEnqueueReadImage(commandQueue, ocl_filtered_image, CL_TRUE, origin, region, 0, 0, GPU_output, 0, NULL, NULL);
     LOG_OCL_ERROR(status, "Error # clEnqueueReadImage" );
 }
@@ -58,28 +58,28 @@ void ImageFilter::load_GPU_raw_image()
     size_t origin[3];
     size_t region[3];
     cl_int status = 0;
-	origin[0] = origin[1] = origin[2] = 0;
-	region[0] = image->width; region[1] = image->height; region[2] = 1;
+    origin[0] = origin[1] = origin[2] = 0;
+    region[0] = image->width; region[1] = image->height; region[2] = 1;
     status = clEnqueueWriteImage(commandQueue, ocl_raw, CL_TRUE, origin, region, 0, 0, image->pixels, 0, NULL, NULL);
     LOG_OCL_ERROR(status, "Error # clEnqueueReadImage" );
 }
 
 void ImageFilter::print_GPU_Timer()
 {
-	printf("GPU execution time is.......... %lf (ms)\n", 1000*timer_GPU.GetElapsedTime());
+    printf("GPU execution time is.......... %lf (ms)\n", 1000*timer_GPU.GetElapsedTime());
 }
 
 void ImageFilter::cleanup()
 {
-	free(host_image);
+    free(host_image);
     ReleaseBMPImage(&image);
-	cout << "Cleaned up!\n";
+    cout << "Cleaned up!\n";
 }
 
 void ImageFilter::init_GPU_OpenCL( )
 {
-	//Allocate GPU output image memory
-	GPU_output = NULL;
+    //Allocate GPU output image memory
+    GPU_output = NULL;
     GPU_output = (float*) calloc(1, image->height*image->width*sizeof(float) );
 
     setupOCLPlatform();
@@ -87,24 +87,24 @@ void ImageFilter::init_GPU_OpenCL( )
     setupOCLkernels();
     setupOCLbuffers();
 
-	gwsize[0] = image->width;
-	gwsize[1] = image->height;
-	lwsize[0] = lwsize[1] = 16;
+    gwsize[0] = image->width;
+    gwsize[1] = image->height;
+    lwsize[0] = lwsize[1] = 16;
 }
 
 void ImageFilter::setupOCLPlatform()
 {
     cl_int status;
-	//Setup the OpenCL Platform,
-	//Get the first available platform. Use it as the default platform
+    //Setup the OpenCL Platform,
+    //Get the first available platform. Use it as the default platform
     status = clGetPlatformIDs(1, &platform, NULL);
     LOG_OCL_ERROR(status, "Error # clGetPlatformIDs" );
 
-	//Get the first available device
+    //Get the first available device
     status = clGetDeviceIDs (platform, deviceType, 1, &device, NULL);
     LOG_OCL_ERROR(status, "Error # clGetDeviceIDs" );
 
-	//Create an execution context for the selected platform and device.
+    //Create an execution context for the selected platform and device.
     cl_context_properties cps[3] =
     {
         CL_CONTEXT_PLATFORM,
@@ -136,7 +136,6 @@ cl_int ImageFilter::setupOCLProgram()
 
     // Build the program
     status = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
-    LOG_OCL_ERROR(status, "clBuildProgram Failed" );
     if(status != CL_SUCCESS)
     {
         if(status == CL_BUILD_PROGRAM_FAILURE)
@@ -160,25 +159,25 @@ cl_int ImageFilter::setupOCLkernels()
 cl_int ImageFilter::setupOCLbuffers()
 {
     cl_int status;
-	//Intermediate reusable cl buffers
-	cl_image_format image_format;
-	image_format.image_channel_data_type = CL_FLOAT;
-	image_format.image_channel_order = CL_R;
+    //Intermediate reusable cl buffers
+    cl_image_format image_format;
+    image_format.image_channel_data_type = CL_FLOAT;
+    image_format.image_channel_order = CL_R;
 
 #ifdef OPENCL_1_2
     cl_image_desc image_desc;
-	image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
-	image_desc.image_width = image->width;
-	image_desc.image_height = image->height;
-	image_desc.image_depth = 1;
-	image_desc.image_array_size = 1;
+    image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+    image_desc.image_width = image->width;
+    image_desc.image_height = image->height;
+    image_desc.image_depth = 1;
+    image_desc.image_array_size = 1;
     //Note when the host_ptr is NULL row_pitch and slice_pith should be set to 0;
     //Otherwise you will get a CL_INVALID_IMAGE_DESCRIPTOR error
-	image_desc.image_row_pitch = 0;
-	image_desc.image_slice_pitch = 0;
-	image_desc.num_mip_levels = 0;
-	image_desc.num_samples = 0;
-	image_desc.buffer= NULL;
+    image_desc.image_row_pitch = 0;
+    image_desc.image_slice_pitch = 0;
+    image_desc.num_mip_levels = 0;
+    image_desc.num_samples = 0;
+    image_desc.buffer= NULL;
 #endif
 #ifdef OPENCL_1_2
     ocl_raw = clCreateImage(
@@ -200,8 +199,8 @@ cl_int ImageFilter::setupOCLbuffers()
 #ifdef OPENCL_1_2
     //Note when the host_ptr is NULL row_pitch and slice_pith should be set to 0;
     //Otherwise you will get a CL_INVALID_IMAGE_DESCRIPTOR error
-	image_desc.image_row_pitch = 0;
-	image_desc.image_slice_pitch = 0;
+    image_desc.image_row_pitch = 0;
+    image_desc.image_slice_pitch = 0;
     ocl_filtered_image = clCreateImage(
 #else
     ocl_filtered_image = clCreateImage2D(
@@ -222,7 +221,7 @@ cl_int ImageFilter::setupOCLbuffers()
         context,
         CL_MEM_READ_WRITE|CL_MEM_USE_HOST_PTR,
         WINDOW_SIZE*WINDOW_SIZE*sizeof(float),
-		filter,
+        filter,
         &status);
     LOG_OCL_ERROR(status, "clCreateBuffer Failed" );
 
@@ -230,23 +229,23 @@ cl_int ImageFilter::setupOCLbuffers()
         context,
         CL_MEM_READ_WRITE|CL_MEM_USE_HOST_PTR,
         WINDOW_SIZE*WINDOW_SIZE*sizeof(float),
-		filter,
+        filter,
         &status);
     LOG_OCL_ERROR(status, "clCreateBuffer Failed" );
-	//Create OpenCL device output buffer
+    //Create OpenCL device output buffer
     return status;
 }
 
 void ImageFilter::run_GPU()
 {
-	load_GPU_raw_image();
-	run_gaussian_filter_kernel();
-	read_GPU_filtered_image();
+    load_GPU_raw_image();
+    run_gaussian_filter_kernel();
+    read_GPU_filtered_image();
 }
 
 void ImageFilter::run_gaussian_filter_kernel()
 {
-	cl_event	wlist[2];
+    cl_event	wlist[2];
     cl_int status;
 
     int windowSize = WINDOW_SIZE;
@@ -271,34 +270,42 @@ void ImageFilter::run_gaussian_filter_kernel()
 
 int main(int argc, char* argv[])
 {
+    if(argc < 2)
+    {
+        std::cout << "Usage: chapter9.sobel.exe sample.bmp\n";
+        std::cout << "The file sample.bmp is available in the input_images directory. This \n";
+        std::cout << "This should be a grayscale image. and the height and width should be amultiple of 16 pixels\n";
+        return 0;
+    }
+
     ImageFilter*	img_filter;
-	img_filter = new ImageFilter(string(argv[1]));
-	unsigned int num_of_frames = 0;
+    img_filter = new ImageFilter(string(argv[1]));
+    unsigned int num_of_frames = 0;
     try
     {
-	    img_filter->init_GPU_OpenCL();
-	    img_filter->start_GPU_Timer();
-	    img_filter->run_GPU();
-	    img_filter->stop_GPU_Timer();
-	    img_filter->print_GPU_Timer();
-	    img_filter-> write_bmp_image( );
-	    delete(img_filter);
+        img_filter->init_GPU_OpenCL();
+        img_filter->start_GPU_Timer();
+        img_filter->run_GPU();
+        img_filter->stop_GPU_Timer();
+        img_filter->print_GPU_Timer();
+        img_filter-> write_bmp_image( );
+        delete(img_filter);
     }
 #ifdef __CL_ENABLE_EXCEPTIONS
-	catch(cl::Error err)
-	{
-		std::cout << "Error: " << err.what() << "(" << err.err() << ")" << std::endl;
-		cout << "Please check CL/cl.h for error code" << std::endl;
-		delete(img_filter);
-	}
+    catch(cl::Error err)
+    {
+        std::cout << "Error: " << err.what() << "(" << err.err() << ")" << std::endl;
+        cout << "Please check CL/cl.h for error code" << std::endl;
+        delete(img_filter);
+    }
 #endif
-	catch(string msg)
-	{
-		std::cout << "Exception caught: " << msg << std::endl;
-		delete(img_filter);
-	}
+    catch(string msg)
+    {
+        std::cout << "Exception caught: " << msg << std::endl;
+        delete(img_filter);
+    }
 
-	return 0;
+    return 0;
 }
 
 
