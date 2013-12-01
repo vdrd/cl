@@ -1,6 +1,4 @@
-#ifdef WIN32
-#include <windows.h>
-#endif
+
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -11,21 +9,23 @@
 #include <CL/cl.h>
 #endif
 #include <ocl_macros.h>
-//32 by 32 matrix
-//#define VECTOR_SIZE 1048576
-//#define VECTOR_SIZE 1024
-//#define MATRIX_WIDTH 1024
-//#define MATRIX_HEIGHT MATRIX_WIDTH
-bool verify = true;
 
 #define BLOCK_SIZE 8
+/* Enable any one of the following macros. 
+ * Each of the following macros enables a part of the code to 
+ * explain the different mechanism to implement a Matrix multiplication. */
 
-unsigned long long CounterStart = 0;
-double PCFreq = 0.0;
-void StartCounter();
+#define ENABLE_BASIC
+//#define ENABLE_BASIC_VECTOR4
+//#define ENABLE_LOCAL_A
+//#define ENABLE_LOCAL_A_COALLESCED
+//#define ENABLE_LOCAL_A_COALLESCED_ROW
+//#define ENABLE_COALLESCED_ROW
 
 
-
+/* Matrix multiplication kernels. 
+ * There are 5 different implementations of this kernel. 
+ */
 const char *MatrixMul_kernel_basic =
 "__kernel                                                                                   \n"
 "void MatrixMul_kernel_basic(int dim,                                                       \n"
@@ -205,17 +205,6 @@ const char *MatrixMul_kernel_localA_coallesced_row =
 "}                                                                                          \n";
 
 
-#define ENABLE_BASIC
-//#define ENABLE_BASIC_VECTOR4
-//#define ENABLE_LOCAL_A
-//#define ENABLE_LOCAL_A_COALLESCED
-//#define ENABLE_LOCAL_A_COALLESCED_ROW
-//#define ENABLE_COALLESCED_ROW
-//////////#define ENABLE_ROW_PER_WI
-//////////#define ENABLE_ROW_PER_WI_A_PRIVATE
-//////////#define ENABLE_ROW_PER_WI_A_PRIVATE_B_LOCAL
-//
-
 //One kernel computes 1 Row of C
 //1 fixed row of A is used to compute that row of C
 //But, for each element  of C one distinct column is required.
@@ -321,18 +310,6 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
             (const char **)&MatrixMul_kernel_basic_vector4, NULL, &clStatus);
             printf("\n ENABLE_BASIC_VECTOR4 \n");
 #endif
-//#ifdef ENABLE_ROW_PER_WI
-//            (const char **)&MatrixMul_kernel_RowPerWI, NULL, &clStatus);
-//            printf("\n ENABLE_ROW_PER_WI \n");
-//#endif
-//#ifdef ENABLE_ROW_PER_WI_A_PRIVATE
-//            (const char **)&MatrixMul_kernel_RowPerWI_APriv, NULL, &clStatus);
-//            printf("\n ENABLE_ROW_PER_WI_A_PRIVATE \n");
-//#endif
-//#ifdef ENABLE_ROW_PER_WI_A_PRIVATE_B_LOCAL
-//            (const char **)&MatrixMul_kernel_RowPerWI_APriv_BLocal, NULL, &clStatus);
-//            printf("\n ENABLE_ROW_PER_WI_A_PRIVATE_B_LOCAL \n");
-//#endif
 
     LOG_OCL_ERROR(clStatus, "clCreateProgramWithSource Failed" );
 
@@ -430,28 +407,11 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
     local_size[1] =  BLOCK_SIZE;
     local_size[1] =  BLOCK_SIZE*2;
 #endif
-//#ifdef ENABLE_ROW_PER_WI
-//    global_size[0] = MATRIX_HEIGHT;
-//    local_size[0] =  128;//for size of 512
-//#endif
-//#ifdef ENABLE_ROW_PER_WI_A_PRIVATE
-//    global_size[0] = MATRIX_HEIGHT;
-//    local_size[0] =  128;//for size of 512
-//#endif
-//#ifdef ENABLE_ROW_PER_WI_A_PRIVATE_B_LOCAL
-//    global_size[0] = MATRIX_HEIGHT;
-//    local_size[0] =  128;//for size of 512
-//#endif
+
     printf("Running for GLobal = %ld %ld, Local = %ld %ld\n",global_size[0], global_size[1], local_size[0], local_size[1]);
-//#if defined( ENABLE_ROW_PER_WI ) || defined(ENABLE_ROW_PER_WI_A_PRIVATE) || defined(ENABLE_ROW_PER_WI_A_PRIVATE_B_LOCAL) ||defined (ENABLE_ROW_PER_WI_A_PRIVATE) 
-//    clStatus = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
-//            global_size, local_size, 0, NULL, &events);
-//#else
     clStatus = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL,
             global_size, local_size, 0, NULL, &events);
-//#endif
     LOG_OCL_ERROR(clStatus, "clEnqueueNDRangeKernel Failed" );
-    //if(CL_SUCCESS != clStatus) printf("\n clEnqueueNDRangeKernel Failed -- %d", clStatus);
     clWaitForEvents(1, &events);
 
     cl_ulong startTime;
@@ -482,9 +442,7 @@ int callMatrixMult1(int MATRIX_WIDTH, int MATRIX_HEIGHT, bool verify)
 
     printf("\n Kernel1................................................\n");
     printf("\n Time to execute Kernel=%f ms", sec * 1000);
-    // Display the result to the screen
-    /*for(i = 0; i < VECTOR_SIZE; i++)
-        printf("\n%d-th Elements  A=%f B=%f C=%f", i, A[i], B[i], C[i]);*/
+
     if(verify)
     {
         if(resultIsCorrect(A,B,C,MATRIX_WIDTH))
@@ -567,20 +525,3 @@ bool resultIsCorrect(float* pA,float* pB,float* pCTest, int dim)
     return result;
 }
 
-
-void StartCounter()
-{
-#ifdef WIN32
-    LARGE_INTEGER li;
-    if(!QueryPerformanceFrequency(&li))
-        std::cout << "QueryPerformanceFrequency failed!\n";
-
-    PCFreq = double(li.QuadPart)/1000.0;
-
-    QueryPerformanceCounter(&li);
-    CounterStart = li.QuadPart;
-#else
-    PCFreq = CLOCKS_PER_SEC;
-    CounterStart = clock();
-#endif
-}
