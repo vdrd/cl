@@ -21,5 +21,4 @@ SUBDIRS( chapter-1/
          chapter-8/
          chapter-9/
          chapter-11/
-         test/
          )
