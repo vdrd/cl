@@ -28,20 +28,14 @@ Fw64u FileLength(int fd)
 
 int image::open(const char *inputFile)
 {
-    //int errNo;
     int fd;
     
-    //FILE *fd;
-    //*image = (Image *)calloc(1,sizeof(Image));
-    //(*image)->filename = filename.c_str();
-
 #ifdef WIN32
     fopen_s(&fp, inputFile, "rb");
 #else
     fp = fopen(inputFile, "rb");
 #endif
 
-    //fp = fopen(inputFile, "rb");
     if (fp == NULL)
         return OCL_FAILURE;
     
@@ -123,7 +117,6 @@ unsigned char image::findNextMarker()
     return nextMarker;
 }
 
-
 void image::decode()
 {
     unsigned char nextMarker;
@@ -138,7 +131,7 @@ void image::decode()
         while(((nextMarker!=SOF0)&&(nextMarker!=SOF1)&&(nextMarker!=SOF2)&&(nextMarker!=SOF3)&&(nextMarker!=SOF5)&&(nextMarker!=SOF6)&&(nextMarker!=SOF7)&&(nextMarker!=SOF9)&&(nextMarker!=SOFA)&&(nextMarker!=SOFB)&&(nextMarker!=SOFD)&&(nextMarker!=SOFE)&&(nextMarker!=SOFF)))		
         {
             processTablenMisc(nextMarker);
-            std::cout << "Next Marker = " << nextMarker << "\n";
+            //std::cout << "Next Marker = " << nextMarker << "\n";
             nextMarker = findNextMarker();
         }
         decodeFrame(nextMarker);
@@ -206,6 +199,7 @@ void image::processTablenMisc(unsigned char marker)
     default: PrintError(true,"\nError: Invalid marker\n");
     }
 }
+
 void image::decodeFrame(unsigned char SOFmarker)
 {
     switch(SOFmarker)
@@ -388,7 +382,6 @@ void image::processDQT()
     }// end while
 }
 
-
 void image::processDRI()
 {
     unsigned short int length;
@@ -545,7 +538,6 @@ void image::decodeScan()
     }
     return;
 }
-
 
 void PrintInfo(int condition, const char *fmt_string, ...)  
 {

@@ -1,7 +1,6 @@
-
-
 #include "JPEG_Decoder.hpp"
 #include "Framewave.h"
+
 int 
 JPEG_Decoder::initialize()
 {
@@ -25,7 +24,7 @@ JPEG_Decoder::setupCL(void)
     LOG_OCL_ERROR(status, "clGetPlatformIDs Failed" );
     cl_device_type dType;
     
-    dType = CL_DEVICE_TYPE_GPU;
+    dType = CL_DEVICE_TYPE_CPU;
     cl_context_properties contextProperty[3] = 
     {
         CL_CONTEXT_PLATFORM,
@@ -563,8 +562,6 @@ JPEG_Decoder::runCLKernels(void)
     return OCL_SUCCESS;
 }
 
-
-
 int
 JPEG_Decoder::runOnDevicesCLKernels(void)
 {
@@ -575,7 +572,7 @@ JPEG_Decoder::runOnDevicesCLKernels(void)
      * Kernel runs over complete output matrix with blocks of blockSize x blockSize 
      * running concurrently
      */
-    size_t globalThreads[2]= {1, 2};
+    size_t globalThreads[2]= {2, 1};
     size_t localThreads[2] = {1, 1};
 
     long long kernelsStartTime;
@@ -714,7 +711,7 @@ JPEG_Decoder::runOnDevicesCLKernels(void)
         totalKernelTime = (double)(kernelsEndTime - kernelsStartTime)/1e9;
         std::cout << std::endl << "kernelsEndTime   = " << kernelsEndTime << std::endl;
         std::cout << "kernelsStartTime = " << kernelsStartTime << std::endl;
-        std::cout << "No OF Devices Implementation totalKernelTime = " << totalKernelTime << std::endl<< std::endl;
+        std::cout << "No Of Devices Implementation totalKernelTime = " << totalKernelTime << std::endl<< std::endl;
     }
 
     clReleaseEvent(events[0]);
@@ -779,7 +776,6 @@ JPEG_Decoder::runRef()
     return OCL_SUCCESS;
 }
 
-
 int 
 JPEG_Decoder::runOnDevices()
 {
@@ -788,7 +784,6 @@ JPEG_Decoder::runOnDevices()
         return OCL_FAILURE;
     return OCL_SUCCESS;
 }
-
 
 int 
 JPEG_Decoder::verifyResults()
@@ -803,10 +798,6 @@ JPEG_Decoder:: printStats()
     std::string stats[1];
 
     totalTime = setupTime + totalKernelTime;
-
-    /*stats[0]  = sampleCommon->toString(totalTime, std::dec);
-    
-    this->SDKSample::printStats(strArray, stats, 1);*/
 }
 
 int 
@@ -870,25 +861,46 @@ JPEG_Decoder::cleanup()
 int 
 JPEG_Decoder::decodeImage(const char *fileName)
 {
-    Image.open(fileName); 
+    if(Image.open(fileName) == OCL_FAILURE)
+    {
+        std::cout<<"File lena.jpg is not available......\n";
+        std::cout<<"Copy lena.jpg file from the input_images folder to the location where the executable is generated\n";
+        exit(-1);
+    }
     
     Image.decode(); //This parses all the MCUs and stores it in a buffer
     Image.close();
     /*First get the reference implementations data*/
     if(setup()!= OCL_SUCCESS)
         return OCL_FAILURE;
+
+
+    std::cout << "*****************************************\n";
+    std::cout << "Running Reference Implementation\n";
     if(runRef()!= OCL_SUCCESS)
         return OCL_FAILURE;
     Image.write("referenceOutput.bmp", Image.pOutputFinalReferenceDst);
-    //////if(runOnDevices()!= OCL_SUCCESS)
-    //////    return OCL_FAILURE;	
-    //////Image.write("noOfDevicesOutput.bmp", Image.pOutputFinalNoOfDevicesDst);
+    std::cout << "Decoded output file written to referenceOutput.bmp\n";
+
+
+    std::cout << "*****************************************\n";
+    std::cout << "Running Devices Implementation\n";
+    if(runOnDevices()!= OCL_SUCCESS)
+        return OCL_FAILURE;	
+    Image.write("noOfDevicesOutput.bmp", Image.pOutputFinalNoOfDevicesDst);
+    std::cout << "Decoded output file written to noOfDevicesOutput.bmp\n";
+
+
     /*Now get the Opencl implementation*/
-    
-    //if(run()!=OCL_SUCCESS)
-    //    return OCL_FAILURE;
-    //Image.write("openclOutput.bmp", Image.pOutputFinalOpenclDst);
-    
+    std::cout << "*****************************************\n";
+    std::cout << "Running OpenCL Implementation\n";    
+    if(run()!=OCL_SUCCESS)
+        return OCL_FAILURE;
+    Image.write("openclOutput.bmp", Image.pOutputFinalOpenclDst);
+    std::cout << "Decoded output file written to openclOutput.bmp\n";
+    std::cout << "*****************************************\n";
+
+
     if(cleanup()!=OCL_SUCCESS)
         return OCL_FAILURE;
     return OCL_SUCCESS;

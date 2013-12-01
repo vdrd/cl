@@ -24,25 +24,7 @@
  * Derived from SDKSample base class
  */
 
-
-//typedef unsigned long Fw64u;
-//typedef unsigned char Fw8u;
-//typedef unsigned short Fw16u;
-//typedef signed short Fw16s;
-//struct DecodeHuffmanSpec 
-//{ 
-//	Fw8u  pListVals[256];				//Copy of pListVals from SpecInit
-//	Fw16u symcode[256];            // symbol code
-//	Fw16u symlen[256];             // symbol code length
-//
-//	Fw16s mincode[18];             // smallest code value of specified length I
-//	Fw16s maxcode[18];             // largest  code value of specified length I 
-//	Fw16s valptr[18];              // index to the start of HUFFVAL decoded by code words of Length I 
-//};
-//typedef struct DecodeHuffmanSpec  FwiDecodeHuffmanSpec;
-
-
-class JPEG_Decoder /*: public SDKSample*/
+class JPEG_Decoder 
 {
     cl_uint                  seed;      /**< Seed value for random number generation */
     cl_double           setupTime;      /**< Time for setting up OpenCL */
@@ -88,7 +70,7 @@ public:
      * @param name name of sample (string)
      */
     JPEG_Decoder(std::string name)
-        /*: SDKSample(name)*/{
+        {
             seed   = 123;
             n = 64;
             m = 64;
@@ -104,7 +86,7 @@ public:
      * @param name name of sample (const char*)
      */
     JPEG_Decoder(const char* name)
-        /*: SDKSample(name)*/{
+        {
             seed   = 123;
             n = 64;
             m = 64;

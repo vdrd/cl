@@ -19,8 +19,9 @@
 #define OCL_FAILURE -1
 
 
-
-#define _printInfo_ 
+/*Enable the below defines for enabling printing the JPEG file parsing output*/
+//#define _printInfo_ 
+//#define _printError_ 
 void PrintInfo(int condition, const char *fmt_string, ...);
 void PrintError(int condition, const char *fmt_string, ...);
 

@@ -20,3 +20,5 @@ set( median.Headers ../include/bmp_image.h median_kernel.h median.h ../include/T
 set( median.Files ${median.Source} ${median.Headers} )
 add_executable( chapter9.median  ${median.Files} )
 target_link_libraries( chapter9.median ${OPENCL_LIBRARIES} ${RUNTIME_LIBRARY})
+
+SUBDIRS( jpeg_decoder )
