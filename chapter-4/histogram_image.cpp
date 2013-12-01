@@ -113,7 +113,10 @@ int main(int argc, char *argv[])
     std::string filename = "sample_color.bmp";
     ReadBMPImage(filename, &image);
     if(image == NULL)
+    {
+        printf("Copy the file sample_color.bmp from the folder input_images. And then run again.");
         return 0;
+    }
     subHistgCnt  = (image->width * image->height)/(groupSize*blockWidth*blockHeight);
     midDeviceBinR = (cl_uint*)malloc(binSize * subHistgCnt * sizeof(cl_uint));
     midDeviceBinG = (cl_uint*)malloc(binSize * subHistgCnt * sizeof(cl_uint));
