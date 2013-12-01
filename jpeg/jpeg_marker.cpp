@@ -28,38 +28,38 @@ void APP0::processAPP0()
     unsigned char yThumbnail; 
 
     length = image::getNext2Bytes();
-    identifier[0] = image::getNextByte();
-    identifier[1] = image::getNextByte();
-    identifier[2] = image::getNextByte();
-    identifier[3] = image::getNextByte();
-    identifier[4] = image::getNextByte();
+    identifier[0] = image::readByte();
+    identifier[1] = image::readByte();
+    identifier[2] = image::readByte();
+    identifier[3] = image::readByte();
+    identifier[4] = image::readByte();
 
-    version[0] = image::getNextByte();
-    version[1] = image::getNextByte();
+    version[0] = image::readByte();
+    version[1] = image::readByte();
 
-    units = image::getNextByte();
+    units = image::readByte();
 
     xDensity = image::getNext2Bytes();
     yDensity = image::getNext2Bytes();
-    xThumbnail = image::getNextByte();
-    yThumbnail = image::getNextByte();
+    xThumbnail = image::readByte();
+    yThumbnail = image::readByte();
 
     // TODO: should read the RGBn here(for the thubnail).. skipping it for now
     image::moveCurIndex(length-16);
 
-    printInfo(1,"\ninfo : found APP0 marker\n");
-    printInfo(1,"\n********************** APP0 HEADER *****************************\n");
-    printInfo(1,"\nlength : %u\n", length);
-    printInfo(1,"\nidentifier : %s\n", identifier);
-    printInfo(1,"\nversion : %d.%d\n", version[0], version[1]); 
-    printInfo((units == 0),"\no units for X an Y Densities\n");
-    printInfo((units == 1),"\nX and Y are dots per Inch\n");
-    printInfo((units == 2),"\nX and Y are dots per CM\n");
-    printInfo(1,"\nxDensity : %u\n", xDensity);
-    printInfo(1,"\nyDensity : %u\n", yDensity);
-    printInfo(1,"\nxThumbnail : %u\n", xThumbnail);
-    printInfo(1,"\nyThumbnail : %u\n", yThumbnail);
-    printInfo(1,"\n****************************************************************\n");
+    PrintInfo(true,"\ninfo : found APP0 marker\n");
+    PrintInfo(true,"\n********************** APP0 HEADER *****************************\n");
+    PrintInfo(true,"\nlength : %u\n", length);
+    PrintInfo(true,"\nidentifier : %s\n", identifier);
+    PrintInfo(true,"\nversion : %d.%d\n", version[0], version[1]); 
+    PrintInfo((units == 0),"\no units for X an Y Densities\n");
+    PrintInfo((units == 1),"\nX and Y are dots per Inch\n");
+    PrintInfo((units == 2),"\nX and Y are dots per CM\n");
+    PrintInfo(true,"\nxDensity : %u\n", xDensity);
+    PrintInfo(true,"\nyDensity : %u\n", yDensity);
+    PrintInfo(true,"\nxThumbnail : %u\n", xThumbnail);
+    PrintInfo(true,"\nyThumbnail : %u\n", yThumbnail);
+    PrintInfo(true,"\n****************************************************************\n");
 }
 
 
@@ -69,36 +69,36 @@ void SOF0::processSOF0()
         unsigned char nextByte;
 
         length = image::getNext2Bytes();              
-        samplePrecision = image::getNextByte();
+        samplePrecision = image::readByte();
         noOfLines = image::getNext2Bytes();
         samplesPerLine = image::getNext2Bytes();
-        noOfComponents = image::getNextByte(); 
+        noOfComponents = image::readByte(); 
 
         //read the component info
         for(int i=0;i<noOfComponents;i++)
         {
-                componentData[i].componentId = image::getNextByte();
-                nextByte = image::getNextByte();
+                componentData[i].componentId = image::readByte();
+                nextByte = image::readByte();
                 componentData[i].horizontalSamplingFactor = nextByte>>4;
                 componentData[i].verticalSamplingFactor = (nextByte&0x0F);
-                componentData[i].DQTTableSelector = image::getNextByte();
+                componentData[i].DQTTableSelector = image::readByte();
         }//end for loop
 
-        printInfo(1,"\ninfo : found SOF0 marker : BaseLine DCT\n");
-        printInfo(1,"\n********************** SOF0 HEADER *****************************\n");
-        printInfo(1,"\nlength : %d\n", length);  
-        printInfo(1,"\nno. of bits for each sample : %u\n",samplePrecision);
-        printInfo(1,"\nnumber of lines in the image : %u\n",noOfLines);
-        printInfo(1,"\nsamples per line : %u\n", samplesPerLine);
-        printInfo(1,"\nnumber of components in the image : %u\n",noOfComponents);
+        PrintInfo(true,"\ninfo : found SOF0 marker : BaseLine DCT\n");
+        PrintInfo(true,"\n********************** SOF0 HEADER *****************************\n");
+        PrintInfo(true,"\nlength : %d\n", length);  
+        PrintInfo(true,"\nno. of bits for each sample : %u\n",samplePrecision);
+        PrintInfo(true,"\nnumber of lines in the image : %u\n",noOfLines);
+        PrintInfo(true,"\nsamples per line : %u\n", samplesPerLine);
+        PrintInfo(true,"\nnumber of components in the image : %u\n",noOfComponents);
         for(int i=0;i<noOfComponents;i++)
         {
-                printInfo(1,"\ncomponent ID : %u\n", componentData[i].componentId);      
-                printInfo(1,"\nhorizontal sampling factor : %u\n", componentData[i].horizontalSamplingFactor); 
-                printInfo(1,"\nvertical sampling factor : %u\n",componentData[i].verticalSamplingFactor);
-                printInfo(1,"\nquantisation table selector : %u\n",componentData[i].DQTTableSelector);
+                PrintInfo(true,"\ncomponent ID : %u\n", componentData[i].componentId);      
+                PrintInfo(true,"\nhorizontal sampling factor : %u\n", componentData[i].horizontalSamplingFactor); 
+                PrintInfo(true,"\nvertical sampling factor : %u\n",componentData[i].verticalSamplingFactor);
+                PrintInfo(true,"\nquantisation table selector : %u\n",componentData[i].DQTTableSelector);
         }
-        printInfo(1,"\n****************************************************************\n");
+        PrintInfo(true,"\n****************************************************************\n");
 } //end readSOF0 fn
 
 

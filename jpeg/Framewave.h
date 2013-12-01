@@ -1,3 +1,13 @@
+/*
+Copyright (c) 2006-2009 Advanced Micro Devices, Inc. All Rights Reserved.
+This software is subject to the Apache v2.0 License.
+*/
+/* This file is a work derived from the Open Source library, Framewave
+ * http://framewave.sourceforge.net/
+ * All the function definitions and declarartions are derived from the files located at 
+ * http://sourceforge.net/p/framewave/code/HEAD/tree/trunk/Framewave/domain/fwJPEG/ 
+ * */
+
 
 #if !defined(EXTERNAL_FRAMEWAVE_H)
 #define EXTERNAL_FRAMEWAVE_H

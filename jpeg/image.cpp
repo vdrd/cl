@@ -49,20 +49,20 @@ int image::open(const char *inputFile)
     fileLength = FileLength(fd);
     rewind (fp);
     rawImageBuffer = (unsigned char*) malloc((size_t)fileLength);
-    printInfo(1,"\ninfo : rawImageBuffer empty..filling rawImageBuffer\n");
+    PrintInfo(true,"\nInfo : rawImageBuffer empty..filling rawImageBuffer\n");
     if(!feof(fp))
     {
         fread((void *)rawImageBuffer, sizeof(unsigned char),(size_t)fileLength, fp);        
         curIndex = 0;
         if(ferror(fp))
         {
-            printError((ferror(fp)),"\nerror: could not read from file\n");
+            PrintError((ferror(fp)),"\nerror: could not read from file\n");
             curIndex = 0;
             fileLength =  0;
         }
         if(feof(fp))
         {
-            printInfo((feof(fp)),"\ninfo : end of file occured during read\n");
+            PrintInfo((feof(fp)),"\nInfo : End of file occured during read\n");
             return OCL_FAILURE;
         }
     }
@@ -96,7 +96,7 @@ void image::close()
     fclose(fp);
 }
 
-unsigned char image::getNextByte()
+unsigned char image::readByte()
 {
     return image::rawImageBuffer[image::curIndex++];
 }
@@ -112,14 +112,14 @@ unsigned short int image::getNext2Bytes()
 void image::moveCurIndex(Fw64u noOfBytes)
 {
     Fw64u moveto = curIndex + noOfBytes;
-    printError((moveto < curIndex),"\nerror: curIndex is being decremented\n");
+    PrintError((moveto < curIndex),"\nError: curIndex is being decremented\n");
     curIndex = moveto;
 }
 
-unsigned char image::getNextMarker()
+unsigned char image::findNextMarker()
 {
     unsigned char nextMarker;
-    while((nextMarker = getNextByte()) == 0xFF); // to skip any stuffed FF bytes
+    while((nextMarker = readByte()) == 0xFF); // to skip any stuffed FF bytes
     return nextMarker;
 }
 
@@ -128,23 +128,23 @@ void image::decode()
 {
     unsigned char nextMarker;
 
-    nextMarker = getNextMarker();
+    nextMarker = findNextMarker();
     if(nextMarker == SOI)
     {
-        printInfo((nextMarker == SOI),"\ninfo : found SOI marker\n");
+        PrintInfo((nextMarker == SOI),"\nInfo : Found SOI (Start of Image) marker\n");
         //setupDecoder(); //TODO:
         // keep processing markers until you see any SOF marker
-        nextMarker = getNextMarker();
+        nextMarker = findNextMarker();
         while(((nextMarker!=SOF0)&&(nextMarker!=SOF1)&&(nextMarker!=SOF2)&&(nextMarker!=SOF3)&&(nextMarker!=SOF5)&&(nextMarker!=SOF6)&&(nextMarker!=SOF7)&&(nextMarker!=SOF9)&&(nextMarker!=SOFA)&&(nextMarker!=SOFB)&&(nextMarker!=SOFD)&&(nextMarker!=SOFE)&&(nextMarker!=SOFF)))		
         {
             processTablenMisc(nextMarker);
             std::cout << "Next Marker = " << nextMarker << "\n";
-            nextMarker = getNextMarker();
+            nextMarker = findNextMarker();
         }
         decodeFrame(nextMarker);
     }
     else
-        printError((nextMarker != SOI),"\nerror: could not find SOI marker\n");
+        PrintError((nextMarker != SOI),"\nerror: could not find SOI marker\n");
 }// end decodeImage() fn.
 
 void image::processTablenMisc(unsigned char marker)
@@ -168,12 +168,12 @@ void image::processTablenMisc(unsigned char marker)
         }
     case DAC:
         {
-            printError(1,"\nerror: found DAC marker.. not supported\n");
+            PrintError(true,"\nerror: Found DAC marker.. not supported\n");
             break;
         }
     case COM:
         {
-            printInfo(1,"\ninfo : found COM marker.. skipping it\n");// TODO: read the comment
+            PrintInfo(true,"\nInfo : Found COM marker.. skipping it. Comment Marker\n");
             unsigned short int length = image::getNext2Bytes(); // get length of the segment
             image::moveCurIndex(length - 2); // skip the segment
             break;
@@ -198,12 +198,12 @@ void image::processTablenMisc(unsigned char marker)
     case APPD: 
     case APPE:
         {
-            printInfo(1,"\ninfo : found unsupported APPn marker, skipping it\n");
+            PrintInfo(true,"\nInfo : Found unsupported APPn marker, skipping it\n");
             unsigned short int length = image::getNext2Bytes(); // get length of the segment
             image::moveCurIndex(length - 2); // skip the segment
             break;
         }
-    default: printError(1,"\nerror: invalid table/misc marker\n");
+    default: PrintError(true,"\nError: Invalid marker\n");
     }
 }
 void image::decodeFrame(unsigned char SOFmarker)
@@ -228,18 +228,18 @@ void image::decodeFrame(unsigned char SOFmarker)
     case SOFE:
     case SOFF:
         {
-            printError(1,"\nerror: found unsupported SOF marker..this mode of encoding not supported right now\n");
+            PrintError(1,"\nError: Found unsupported SOF marker..this mode of encoding not supported right now\n");
             break;
         }
-    default:printError(1,"\nerror: found invalid frame marker\n");
+    default:PrintError(1,"\nError: Found invalid frame marker\n");
     }
 
     unsigned char nextMarker;
-    nextMarker = getNextMarker();
+    nextMarker = findNextMarker();
     while(nextMarker!=SOS)
         {    // keep processing markers until you see SOS marker
             processTablenMisc(nextMarker);
-            nextMarker = getNextMarker();
+            nextMarker = findNextMarker();
         }
         decodeScan();
 }
@@ -264,7 +264,7 @@ void image::processDHT()
     HuffData acTableData[4];
 
     length = image::getNext2Bytes();
-    nextByte = image::getNextByte();
+    nextByte = image::readByte();
     tableClass = nextByte>>4;
     tableSelector = (nextByte&0x0F); 
 
@@ -275,19 +275,19 @@ void image::processDHT()
         {
             for(int i=0;i<16;i++)// read huff bits list
             {	 
-                dcTableData[tableSelector].bits[i] = image::getNextByte();
+                dcTableData[tableSelector].bits[i] = image::readByte();
                 count = count + dcTableData[tableSelector].bits[i]; // keep track of no. of vals(needed to allocate memory for huff vals)
             }
             dcTableData[tableSelector].count = count;			
             dcTableData[tableSelector].huffVal = (unsigned char *) malloc(count * sizeof(unsigned char));
             for(unsigned long int i=0;i<count;i++)// read huff values
-                dcTableData[tableSelector].huffVal[i] = image::getNextByte();
+                dcTableData[tableSelector].huffVal[i] = image::readByte();
             // TODO: if destinations are already installed with tables.. then free that memory
             errNo = 0;
 #if ENABLE_FRAMEWAVE
             errNo = fwiDecodeHuffmanSpecInitAlloc_JPEG_8u(dcTableData[tableSelector].bits, dcTableData[tableSelector].huffVal, &pHuffDcTable[tableSelector]);
 #endif
-            printError((errNo!=0),"\nerror: error creating huffman dc table : in fwiDecodeHuffmanSpecInitAlloc_JPEG_8u\n");
+            PrintError((errNo!=0),"\nerror: error creating huffman dc table : in fwiDecodeHuffmanSpecInitAlloc_JPEG_8u\n");
             break;
         }
 
@@ -295,43 +295,43 @@ void image::processDHT()
         {
             for(int i=0;i<16;i++)
             {	 
-                acTableData[tableSelector].bits[i] = image::getNextByte();
+                acTableData[tableSelector].bits[i] = image::readByte();
                 count = count + acTableData[tableSelector].bits[i]; // keep track of no. of vals(needed to allocate memory for huff vals)
             }
             acTableData[tableSelector].count = count;
             acTableData[tableSelector].huffVal = (unsigned char *) malloc(count * sizeof(unsigned char));		
             for(unsigned long int i=0;i<count;i++)//read huff values
-                acTableData[tableSelector].huffVal[i] = image::getNextByte();
+                acTableData[tableSelector].huffVal[i] = image::readByte();
             // TODO: if destinations are already installed with tables.. then free that memory
             errNo =0;
 #if ENABLE_FRAMEWAVE
             errNo = fwiDecodeHuffmanSpecInitAlloc_JPEG_8u(acTableData[tableSelector].bits, acTableData[tableSelector].huffVal, &pHuffAcTable[tableSelector]);
 #endif
-            printError((errNo!=0),"\nerror: error creating huffman ac table : in fwiDecodeHuffmanSpecInitAlloc_JPEG_8u\n");
+            PrintError((errNo!=0),"\nerror: error creating huffman ac table : in fwiDecodeHuffmanSpecInitAlloc_JPEG_8u\n");
             break;
         }
     }//end switch
 
-    printInfo(1,"\ninfo : found DHT marker\n");
-    printInfo(1,"\n********************** DHT HEADER ******************************\n");
-    printInfo(1,"\nlength : %d\n", length);
-    printInfo((tableClass==0),"\ntable type : DC table\n");
-    printInfo((tableClass==1),"\ntable type : AC table\n");
-    printInfo(1,"\ntable destination : %u\n", tableSelector);
+    PrintInfo(true,"\nInfo : found DHT marker\n");
+    PrintInfo(true,"\n********************** DHT HEADER ******************************\n");
+    PrintInfo(true,"\nLength : %d\n", length);
+    PrintInfo((tableClass==0),"\nHuffman table type : DC table\n");
+    PrintInfo((tableClass==1),"\nHuffman table type : AC table\n");
+    PrintInfo(true,"\nTable destination : %u\n", tableSelector);
     unsigned long int indexLow = 0, indexHigh = 0;
     for(unsigned int i=0;i<16;i++)
     {
-        printInfo(tableClass==0,"\nnumber of Huffman codes of length %u : %u",i+1,dcTableData[tableSelector].bits[i]);
-        printInfo(tableClass==1,"\nnumber of Huffman codes of length %u : %u",i+1,acTableData[tableSelector].bits[i]);
+        PrintInfo(tableClass==0,"\nNumber of Huffman codes of length %u : %u",i+1,dcTableData[tableSelector].bits[i]);
+        PrintInfo(tableClass==1,"\nNumber of Huffman codes of length %u : %u",i+1,acTableData[tableSelector].bits[i]);
         indexHigh = (tableClass == 0) ? indexLow + dcTableData[tableSelector].bits[i] : indexLow + acTableData[tableSelector].bits[i];
-        printInfo(1,"\n");
+        PrintInfo(true,"\n");
         for(unsigned long int j=indexLow; j<indexHigh; j++)		
-            printInfo(1,"%u ",(tableClass==0) ? dcTableData[tableSelector].huffVal[j] : acTableData[tableSelector].huffVal[j]);
+            PrintInfo(true,"%u ",(tableClass==0) ? dcTableData[tableSelector].huffVal[j] : acTableData[tableSelector].huffVal[j]);
 
         indexLow = indexHigh;
-        printInfo(1,"\n");
+        PrintInfo(true,"\n");
     }
-    printInfo(1,"\n****************************************************************\n");
+    PrintInfo(true,"\n****************************************************************\n");
 }
 
 void image::processDQT()
@@ -347,7 +347,7 @@ void image::processDQT()
     noOfTables = (length - 2)/65;
     while(noOfTables!=0) // fill all the quantisation tables
     {
-        nextByte = image::getNextByte();
+        nextByte = image::readByte();
         precision = nextByte>>4;
         destination = (nextByte&0x0F);
         switch(precision)
@@ -356,35 +356,35 @@ void image::processDQT()
         case  0: // 8-bit quantisation values
             {
                 for(int i=0;i<64;i++)
-                    rawQuantTable[i] = image::getNextByte(); 
+                    rawQuantTable[i] = image::readByte(); 
                 errNo = 0;
 #if ENABLE_FRAMEWAVE
                 errNo = fwiQuantInvTableInit_JPEG_8u16u(rawQuantTable, &(quantInvTable[destination][0]));
 #endif
-                printError((errNo!=0),"\nerror: errNo != 0 in fwiQuantInvTableInit_JPEG_8u16u\n");
+                PrintError((errNo!=0),"\nerror: errNo != 0 in fwiQuantInvTableInit_JPEG_8u16u\n");
                 break;
             }
         case  1:
-            printError(1,"\nerror: 16 bit quantisation values not supported\n");	
-        default: printError(1,"\nError: precision of quantisation values not supported\n");
+            PrintError(true,"\nerror: 16 bit quantisation values not supported\n");	
+        default: PrintError(1,"\nError: precision of quantisation values not supported\n");
         }// end switch
         noOfTables = noOfTables - 1; // decrement noOfTables
 
-        printInfo(1,"\ninfo : found DQT marker\n");
-        printInfo(1,"\n********************** DQT HEADER ******************************\n");
-        printInfo(1,"\nlength : %d\n", length); 
+        PrintInfo(true,"\ninfo : found DQT marker\n");
+        PrintInfo(true,"\n********************** DQT HEADER ******************************\n");
+        PrintInfo(true,"\nlength : %d\n", length); 
 
-        printInfo((precision==0),"\nPrecision of quantisation values : 8 bits\n");
-        printInfo((precision==1),"\nPrecision of quantisation values : 16 bits\n");
-        printInfo(1,"\nDestination : %u\n", destination);
-        printInfo(1,"\nDQT Table:\n\n");
+        PrintInfo((precision==0),"\nPrecision of quantisation values : 8 bits\n");
+        PrintInfo((precision==1),"\nPrecision of quantisation values : 16 bits\n");
+        PrintInfo(true,"\nDestination : %u\n", destination);
+        PrintInfo(true,"\nDQT Table:\n\n");
         for(int i=0;i<8;i++)
         {
             for(int j=0;j<8;j++)
-                printInfo(1,"%2u ", quantInvTable[destination][i*8+j]);
-            printInfo(1,"\n");
+                PrintInfo(true,"%2u ", quantInvTable[destination][i*8+j]);
+            PrintInfo(true,"\n");
         }
-        printInfo(1,"\n****************************************************************\n");
+        PrintInfo(true,"\n****************************************************************\n");
     }// end while
 }
 
@@ -398,13 +398,13 @@ void image::processDRI()
     if(restartInterval > 0)
         restartEnabled = true;
 
-    printInfo(1,"\ninfo : found DRI marker\n");
-    printInfo(1,"\n********************** DRI HEADER ******************************\n");
-    printInfo(1,"\nlength : %u\n", length);
-    printInfo(1,"\nrestart interval : %u \n", restartInterval);
-    printInfo((restartEnabled == true),"\nrestart is enabled\n");
-    printInfo((restartEnabled == false),"\nrestart is not enabled\n");
-    printInfo(1,"\n****************************************************************\n");
+    PrintInfo(true,"\ninfo : found DRI marker\n");
+    PrintInfo(true,"\n********************** DRI HEADER ******************************\n");
+    PrintInfo(true,"\nlength : %u\n", length);
+    PrintInfo(true,"\nrestart interval : %u \n", restartInterval);
+    PrintInfo((restartEnabled == true),"\nrestart is enabled\n");
+    PrintInfo((restartEnabled == false),"\nrestart is not enabled\n");
+    PrintInfo(true,"\n****************************************************************\n");
 }
 
 void image::processScan()
@@ -413,35 +413,35 @@ void image::processScan()
     unsigned char nextByte;
 
     length = image::getNext2Bytes();
-    noOfComponents = image::getNextByte();
+    noOfComponents = image::readByte();
     for(int i=0;i<noOfComponents;i++)
     {
-        component[i].ComponentId = image::getNextByte();       
-        nextByte = image::getNextByte();
+        component[i].ComponentId = image::readByte();       
+        nextByte = image::readByte();
         component[i].DCTableSelector = nextByte>>4;        
         component[i].ACTableSelector = (nextByte&0x0F);        
     }
-    startSpectralSelector = image::getNextByte();   
-    endSpectralSelector = image::getNextByte();    
-    nextByte = image::getNextByte();    
+    startSpectralSelector = image::readByte();   
+    endSpectralSelector = image::readByte();    
+    nextByte = image::readByte();    
     bitPositionHigh = nextByte>>4;
     bitPositionLow = nextByte&4;
 
-    printInfo(1,"\nfound SOS marker 0xFF%0x\n");
-    printInfo(1,"\n********************** SOS HEADER ******************************\n");
-    printInfo(1,"\nlength : %u\n", length);
-    printInfo(1,"\nno. of components in the scan : %u\n",noOfComponents);
-    printInfo(1,"\nsuccessive approximation bit position high: %u\n",bitPositionHigh); 
-    printInfo(1,"\nsuccessive approximation bit position low : %u\n",bitPositionLow);
+    PrintInfo(true,"\nfound SOS marker 0xFF%0x\n");
+    PrintInfo(true,"\n********************** SOS HEADER ******************************\n");
+    PrintInfo(true,"\nlength : %u\n", length);
+    PrintInfo(true,"\nno. of components in the scan : %u\n",noOfComponents);
+    PrintInfo(true,"\nsuccessive approximation bit position high: %u\n",bitPositionHigh); 
+    PrintInfo(true,"\nsuccessive approximation bit position low : %u\n",bitPositionLow);
     for(int i=0;i<noOfComponents;i++)
         {
-        printInfo(1,"\ncomponent ID : %u\n", component[i].ComponentId);
-        printInfo(1,"\nDC table selector : %u\n", component[i].DCTableSelector);
-        printInfo(1,"\nAC table selector : %u\n", component[i].ACTableSelector);
+        PrintInfo(true,"\ncomponent ID : %u\n", component[i].ComponentId);
+        PrintInfo(true,"\nDC table selector : %u\n", component[i].DCTableSelector);
+        PrintInfo(true,"\nAC table selector : %u\n", component[i].ACTableSelector);
         }
-    printInfo(1,"\nDCT coefficient for start of scan in zigzag order : %u\n", startSpectralSelector);
-    printInfo(1,"\nlast DCT coefficient encoded in zigzag order : %u\n", endSpectralSelector);
-    printInfo(1,"\n****************************************************************\n");
+    PrintInfo(true,"\nDCT coefficient for start of scan in zigzag order : %u\n", startSpectralSelector);
+    PrintInfo(true,"\nlast DCT coefficient encoded in zigzag order : %u\n", endSpectralSelector);
+    PrintInfo(true,"\n****************************************************************\n");
 }
 
 void image::decodeScan()
@@ -457,7 +457,7 @@ void image::decodeScan()
 #if ENABLE_FRAMEWAVE
     errNo = fwiDecodeHuffmanStateInitAlloc_JPEG_8u(&pDecHuffState);
 #endif
-    printError((errNo!=0),"\nerror: in fwiDecodeHuffmanStateInitAlloc_JPEG_8u\n");
+    PrintError((errNo!=0),"\nerror: in fwiDecodeHuffmanStateInitAlloc_JPEG_8u\n");
     srcCurPos = (int)image::curIndex;
     int tableSelector = 0;
     Fw16s pDataUnit[64]; 
@@ -524,16 +524,11 @@ void image::decodeScan()
 #if ENABLE_FRAMEWAVE
                         errNo = fwiDecodeHuffman8x8_JPEG_1u16s_C1(image::rawImageBuffer, (int)image::fileLength - 1, &srcCurPos, pDataUnit, &(lastDc[i]), &marker, pHuffDcTable[component[i].DCTableSelector], pHuffAcTable[component[i].ACTableSelector],pDecHuffState);
 #endif
-                        //printError((marker!=0),"\nerror: marker found while decoding..\n");
                         if(marker!=0)
                         {
-                            //printError(1,"\nerror: marker is not zero\n");
+                            PrintError(true,"\nError: marker is not zero\n");
                         }
-                        if(errNo !=0)
-                        {
-                            printf("\ncaught");
-                        }
-                        printError((errNo!=0),"\nError : errNo != 0 in fwiDecodeHuffman8x8_JPEG_1u16s_C1\n");
+                        PrintError((errNo!=0),"\nError : errNo != 0 in fwiDecodeHuffman8x8_JPEG_1u16s_C1\n");
                         image::moveCurIndex(srcCurPos - image::curIndex);
 
                         //copy to pTempDst
@@ -552,7 +547,7 @@ void image::decodeScan()
 }
 
 
-void printInfo(int condition, const char *fmt_string, ...)  
+void PrintInfo(int condition, const char *fmt_string, ...)  
 {
 #ifdef _printInfo_
         if(condition)
@@ -569,7 +564,7 @@ void printInfo(int condition, const char *fmt_string, ...)
 #endif 
 }
 
-void printError(int condition, const char *fmt_string, ...)
+void PrintError(int condition, const char *fmt_string, ...)
 {
 #ifdef _printError_
         if(condition)

@@ -2,27 +2,27 @@
 #define IMAGE_H
 
 //#include <io.h>
-//#include "debug.h"
-//#include "markers.h"
-//#include "SOF0.h"
-#include "jpeg_marker.h"
-#include "Framewave.h"
-#define ENABLE_FRAMEWAVE 1
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
 #endif
+#include "jpeg_marker.h"
+#include "Framewave.h"
+#define ENABLE_FRAMEWAVE 1
+
 #define OCL_SUCCESS 0
 #define OCL_FAILURE -1
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
+
 
 
 #define _printInfo_ 
-void printInfo(int condition, const char *fmt_string, ...);
-void printError(int condition, const char *fmt_string, ...);
+void PrintInfo(int condition, const char *fmt_string, ...);
+void PrintError(int condition, const char *fmt_string, ...);
 
 typedef enum
     {
@@ -110,7 +110,7 @@ typedef enum
     // Reserved markers
     TEM   = 0x01, // for Temporary private use in arithematic coding 
     RES   = 0x02  // Reserved from 0x02 upto 0xBF
-    }MARKER;
+    }JPEG_MARKER;
 
 typedef struct
 {
@@ -157,9 +157,9 @@ public:
 public:
     int open(const char *inputFile);
     void close();
-    static unsigned char getNextByte();
+    static unsigned char readByte();
     static unsigned short int getNext2Bytes();
-    unsigned char getNextMarker();
+    unsigned char findNextMarker();
     static void moveCurIndex(Fw64u noOfBytes);
     void decode();	
     void processTablenMisc(unsigned char marker);

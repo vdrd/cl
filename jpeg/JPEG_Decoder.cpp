@@ -360,7 +360,7 @@ JPEG_Decoder::runRefCLKernels(void)
 
         /* Compute total time (also convert from nanoseconds to seconds) */
         totalKernelTime = (double)(kernelsEndTime - kernelsStartTime)/1e9;
-        std::cout << std::endl<< "kernelsEndTime = " << kernelsEndTime << std::endl;
+        std::cout << std::endl<< "kernelsEndTime   = " << kernelsEndTime << std::endl;
         std::cout << "kernelsStartTime = " << kernelsStartTime << std::endl;
         std::cout << "Reference Implementation totalKernelTime = " << totalKernelTime << std::endl<< std::endl;
     }
@@ -534,7 +534,7 @@ JPEG_Decoder::runCLKernels(void)
 
         /* Compute total time (also convert from nanoseconds to seconds) */
         totalKernelTime = (double)(kernelsEndTime - kernelsStartTime)/1e9;
-        std::cout << std::endl << "kernelsEndTime = " << kernelsEndTime << std::endl;
+        std::cout << std::endl << "kernelsEndTime   = " << kernelsEndTime << std::endl;
         std::cout << "kernelsStartTime = " << kernelsStartTime << std::endl;
         std::cout << "Opencl  Implementation totalKernelTime = " << totalKernelTime << std::endl << std::endl;
     }
@@ -712,7 +712,7 @@ JPEG_Decoder::runOnDevicesCLKernels(void)
 
         /* Compute total time (also convert from nanoseconds to seconds) */
         totalKernelTime = (double)(kernelsEndTime - kernelsStartTime)/1e9;
-        std::cout << std::endl << "kernelsEndTime = " << kernelsEndTime << std::endl;
+        std::cout << std::endl << "kernelsEndTime   = " << kernelsEndTime << std::endl;
         std::cout << "kernelsStartTime = " << kernelsStartTime << std::endl;
         std::cout << "No OF Devices Implementation totalKernelTime = " << totalKernelTime << std::endl<< std::endl;
     }
@@ -877,17 +877,17 @@ JPEG_Decoder::decodeImage(const char *fileName)
     /*First get the reference implementations data*/
     if(setup()!= OCL_SUCCESS)
         return OCL_FAILURE;
-    ////////////if(runRef()!= OCL_SUCCESS)
-    ////////////    return OCL_FAILURE;
-    ////////////Image.write("referenceOutput.bmp", Image.pOutputFinalReferenceDst);
-    ////////////if(runOnDevices()!= OCL_SUCCESS)
-    ////////////    return OCL_FAILURE;	
-    ////////////Image.write("noOfDevicesOutput.bmp", Image.pOutputFinalNoOfDevicesDst);
+    if(runRef()!= OCL_SUCCESS)
+        return OCL_FAILURE;
+    Image.write("referenceOutput.bmp", Image.pOutputFinalReferenceDst);
+    //////if(runOnDevices()!= OCL_SUCCESS)
+    //////    return OCL_FAILURE;	
+    //////Image.write("noOfDevicesOutput.bmp", Image.pOutputFinalNoOfDevicesDst);
     /*Now get the Opencl implementation*/
     
-    if(run()!=OCL_SUCCESS)
-        return OCL_FAILURE;
-    Image.write("openclOutput.bmp", Image.pOutputFinalOpenclDst);
+    //if(run()!=OCL_SUCCESS)
+    //    return OCL_FAILURE;
+    //Image.write("openclOutput.bmp", Image.pOutputFinalOpenclDst);
     
     if(cleanup()!=OCL_SUCCESS)
         return OCL_FAILURE;
